@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/matematica-basica-nivelacion/static/css/main.adf694a7.css",
-    "main.js": "/matematica-basica-nivelacion/static/js/main.4fbdc9aa.js",
+    "main.css": "/matematica-basica-nivelacion/static/css/main.2f74e6aa.css",
+    "main.js": "/matematica-basica-nivelacion/static/js/main.c409b972.js",
     "static/js/453.8691b55b.chunk.js": "/matematica-basica-nivelacion/static/js/453.8691b55b.chunk.js",
     "index.html": "/matematica-basica-nivelacion/index.html",
-    "main.adf694a7.css.map": "/matematica-basica-nivelacion/static/css/main.adf694a7.css.map",
-    "main.4fbdc9aa.js.map": "/matematica-basica-nivelacion/static/js/main.4fbdc9aa.js.map",
+    "main.2f74e6aa.css.map": "/matematica-basica-nivelacion/static/css/main.2f74e6aa.css.map",
+    "main.c409b972.js.map": "/matematica-basica-nivelacion/static/js/main.c409b972.js.map",
     "453.8691b55b.chunk.js.map": "/matematica-basica-nivelacion/static/js/453.8691b55b.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.adf694a7.css",
-    "static/js/main.4fbdc9aa.js"
+    "static/css/main.2f74e6aa.css",
+    "static/js/main.c409b972.js"
   ]
 }
