@@ -1,46 +1,63 @@
-# Getting Started with Create React App
+# 🧮 Matemática Básica - Nivelación para Administración de Empresas
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+<div align="center">
+  <img src="https://img.shields.io/badge/Nivel-Universitario-blue" alt="Nivel Universitario">
+  <img src="https://img.shields.io/badge/Enfoque-Administración-orange" alt="Enfoque Administración">
+  <img src="https://img.shields.io/badge/Interactive-Exercises-success" alt="Ejercicios Interactivos">
+</div>
 
-## Available Scripts
+<br />
 
-In the project directory, you can run:
+## 📊 Bienvenido al Curso de Nivelación Matemática
 
-### `npm start`
+> *"Las matemáticas son el alfabeto con el cual Dios ha escrito el universo."* — Galileo Galilei
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Esta plataforma ha sido diseñada específicamente para estudiantes universitarios de **Administración de Empresas** que necesitan fortalecer sus habilidades matemáticas fundamentales. No se trata solo de números, sino de construir las bases analíticas que impulsarán tu carrera profesional.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+### 🎯 Objetivo
 
-### `npm test`
+Desarrollar competencias matemáticas esenciales para el análisis empresarial y la toma de decisiones efectivas en el contexto de los negocios modernos.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 📋 Temas Cubiertos
 
-### `npm run build`
+### 🔢 Álgebra Fundamental
+- **Productos Notables**: La base para simplificar expresiones complejas
+- **Factorización**: Herramientas para resolver ecuaciones comerciales
+- **Ecuaciones Lineales y Cuadráticas**: Modelado de problemas de negocio
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 📈 Aplicaciones Empresariales
+- Modelos de costo-beneficio
+- Optimización de recursos
+- Análisis de punto de equilibrio
+- Proyecciones financieras básicas
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## 💡 Características de la Plataforma
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- **🧪 Ejercicios Interactivos**: Practica con ejercicios que se adaptan a tu nivel
+- **📝 Feedback Inmediato**: Recibe retroalimentación instantánea sobre tus respuestas
+- **🔄 Diferentes Niveles**: Progresa desde conceptos básicos hasta aplicaciones avanzadas
+- **📚 Ejercicios Predefinidos**: Hoja de ejercicios cuidadosamente seleccionados
 
-### `npm run eject`
+## 🚀 Cómo Empezar
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+1. **Accede a la Plataforma**: Visita [https://pjvalverde.github.io/matematica-basica-nivelacion](https://pjvalverde.github.io/matematica-basica-nivelacion)
+2. **Selecciona un Tema**: Elige entre productos notables u orden de operaciones
+3. **Ajusta la Dificultad**: Personaliza el nivel según tus necesidades
+4. **Practica Regularmente**: La consistencia es clave para dominar los conceptos
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🔗 Recursos Adicionales
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- 📗 Libro de referencia: "Matemáticas para Administración y Economía"
+- 🎬 Videos explicativos en cada sección
+- 📊 Ejemplos de aplicaciones reales en negocios
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## 👨‍🏫 Soporte Académico
 
-## Learn More
+Para consultas o apoyo adicional, contacta al departamento de Matemáticas Aplicadas de tu universidad o escribe a tu profesor.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+<div align="center">
+  <p><i>Desarrollando el pensamiento analítico para los líderes empresariales del mañana</i></p>
+  <p>© 2024 Matemática Básica - Nivelación para Administración de Empresas</p>
+</div>
