@@ -41,14 +41,15 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #f9fafb;
+  background-color: #f8f9fa;
 }
 
 .main-content {
-  flex-grow: 1;
+  flex: 1;
+  padding: 2rem 1rem;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 32px 16px;
+  width: 100%;
 }
 
 .exercise-card {
@@ -161,5 +162,21 @@
   
   .form-column {
     width: 50%;
+  }
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.5rem;
+  color: #3498db;
+  background-color: #f8f9fa;
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 1rem;
   }
 }

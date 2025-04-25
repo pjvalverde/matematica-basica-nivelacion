@@ -2,12 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyA1n5o_u8cR0Yp1C8-JBXc5LJ-jnMDl9G8",
+  authDomain: "math-basis.firebaseapp.com",
+  projectId: "math-basis",
+  storageBucket: "math-basis.appspot.com",
+  messagingSenderId: "246621878246",
+  appId: "1:246621878246:web:3cb1cb1bbdeaa5d5aa69c2"
 };
 
 const app = initializeApp(firebaseConfig);

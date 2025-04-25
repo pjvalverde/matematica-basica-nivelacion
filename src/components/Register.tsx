@@ -1,7 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import './Register.css';
 
-
 interface RegisterProps {
   handleRegister: (email: string, password: string) => void;
   onLoginClick: () => void;
@@ -10,21 +9,46 @@ interface RegisterProps {
 const Register: React.FC<RegisterProps> = ({ handleRegister, onLoginClick }) => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    handleRegister(email, password);
+    setError('');
+    
+    // Validaciones
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden');
+      return;
+    }
+    
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      // Versión simplificada para el despliegue - omitimos la autenticación con Firebase
+      // y simplemente llamamos a handleRegister directamente
+      handleRegister(email, password);
+    } catch (error: any) {
+      setError('Error al crear la cuenta. Por favor, inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="register-container">
-
       <div className="register-form-wrapper">
-        <h2 className="register-title">Register</h2>
+        <h2 className="register-title">Crear Cuenta</h2>
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="register-form">
           <div className="form-group">
-            <label htmlFor="email" className="form-label">Email</label>
+            <label htmlFor="email" className="form-label">Correo Electrónico</label>
             <input
               type="email"
               id="email"
@@ -32,10 +56,11 @@ const Register: React.FC<RegisterProps> = ({ handleRegister, onLoginClick }) => 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password" className="form-label">Password</label>
+            <label htmlFor="password" className="form-label">Contraseña</label>
             <input
               type="password"
               id="password"
@@ -43,14 +68,26 @@ const Register: React.FC<RegisterProps> = ({ handleRegister, onLoginClick }) => 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
           </div>
-          <button type="submit" className="register-button">
-            Register
+          <div className="form-group">
+            <label htmlFor="confirmPassword" className="form-label">Confirmar Contraseña</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              className="form-input"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              disabled={loading}
+            />
+          </div>
+          <button type="submit" className="register-button" disabled={loading}>
+            {loading ? 'Creando cuenta...' : 'Registrarse'}
           </button>
           <p className='login-option'>
-
-              Already have an account? <button onClick={onLoginClick}>Login</button>
+            ¿Ya tienes una cuenta? <button type="button" onClick={onLoginClick} disabled={loading}>Iniciar Sesión</button>
           </p>
         </form>
       </div>
