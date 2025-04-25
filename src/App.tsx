@@ -21,6 +21,7 @@ const App: FC = () => {
   const [user, setUser] = useState<User | null>(null);
   const [selectedSection, setSelectedSection] =
     useState<'login' | 'register' | 'exercises'>('login');
+  console.log("selectedSection:", selectedSection);
 
   const [exerciseType, setExerciseType] =
     useState<'notables' | 'operations'>('notables');
@@ -119,6 +120,7 @@ const App: FC = () => {
     };
     const handleRegister = async (email: string, pass: string) => {
         try {
+            console.log("handleRegister: setSelectedSection('exercises')");
             await createUserWithEmailAndPassword(auth, email, pass);
             setSelectedSection('exercises');
         } catch (err) {
@@ -127,6 +129,7 @@ const App: FC = () => {
     };
     const handleLogin = async (email: string, pass: string) => {
         try {
+            console.log("handleLogin: setSelectedSection('exercises')");
             await signInWithEmailAndPassword(auth, email, pass);
             setSelectedSection('exercises');
         } catch (err) {
