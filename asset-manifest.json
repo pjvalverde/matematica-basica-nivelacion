@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/matematica-basica-nivelacion/static/css/main.c55258d2.css",
-    "main.js": "/matematica-basica-nivelacion/static/js/main.e36f7cf8.js",
+    "main.js": "/matematica-basica-nivelacion/static/js/main.0e6ff649.js",
     "static/js/453.8691b55b.chunk.js": "/matematica-basica-nivelacion/static/js/453.8691b55b.chunk.js",
     "static/media/KaTeX_AMS-Regular.ttf": "/matematica-basica-nivelacion/static/media/KaTeX_AMS-Regular.853be92419a6c3766b9a.ttf",
     "static/media/KaTeX_Main-Regular.ttf": "/matematica-basica-nivelacion/static/media/KaTeX_Main-Regular.9eba1d77abcf2aa6e94e.ttf",
@@ -65,11 +65,11 @@
     "static/media/KaTeX_Size3-Regular.woff2": "/matematica-basica-nivelacion/static/media/KaTeX_Size3-Regular.e1951519f6f0596f7356.woff2",
     "index.html": "/matematica-basica-nivelacion/index.html",
     "main.c55258d2.css.map": "/matematica-basica-nivelacion/static/css/main.c55258d2.css.map",
-    "main.e36f7cf8.js.map": "/matematica-basica-nivelacion/static/js/main.e36f7cf8.js.map",
+    "main.0e6ff649.js.map": "/matematica-basica-nivelacion/static/js/main.0e6ff649.js.map",
     "453.8691b55b.chunk.js.map": "/matematica-basica-nivelacion/static/js/453.8691b55b.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.c55258d2.css",
-    "static/js/main.e36f7cf8.js"
+    "static/js/main.0e6ff649.js"
   ]
 }
