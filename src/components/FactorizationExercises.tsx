@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BlockMath, InlineMath } from '../utils/MathRenderer';
 import './FactorizationExercises.css';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // Tipos de ejercicios
 enum ExerciseType {
