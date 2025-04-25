@@ -285,7 +285,7 @@ const FactorizationExercises: React.FC = () => {
     
     // Guardar ejercicios en localStorage si hay un usuario
     if (user) {
-      const userId = user.uid;
+      const userId = user.cedula;
       const currentExerciseSession = JSON.parse(localStorage.getItem(`exerciseSession_${userId}`) || '{"exercises": [], "stats": {"completed": 0, "points": 0, "streak": 0}}');
       
       localStorage.setItem(`exerciseSession_${userId}`, JSON.stringify({
@@ -298,7 +298,7 @@ const FactorizationExercises: React.FC = () => {
   // Cargar datos del localStorage al iniciar
   useEffect(() => {
     if (user) {
-      const userId = user.uid;
+      const userId = user.cedula;
       const savedData = localStorage.getItem(`exerciseSession_${userId}`);
       
       if (savedData) {
@@ -335,7 +335,7 @@ const FactorizationExercises: React.FC = () => {
       setStats(newStats);
       
       // Guardar en localStorage
-      const userId = user.uid;
+      const userId = user.cedula;
       const currentExerciseSession = JSON.parse(localStorage.getItem(`exerciseSession_${userId}`) || '{"exercises": []}');
       
       localStorage.setItem(`exerciseSession_${userId}`, JSON.stringify({
@@ -361,7 +361,7 @@ const FactorizationExercises: React.FC = () => {
       setStats(newStats);
       
       // Guardar en localStorage
-      const userId = user.uid;
+      const userId = user.cedula;
       const currentExerciseSession = JSON.parse(localStorage.getItem(`exerciseSession_${userId}`) || '{"exercises": []}');
       
       localStorage.setItem(`exerciseSession_${userId}`, JSON.stringify({
@@ -376,7 +376,7 @@ const FactorizationExercises: React.FC = () => {
     setShowSolution(true);
     if (user && currentExercise) {
       // Marcar como incorrecto en las estadísticas
-      const userId = user.uid;
+      const userId = user.cedula;
       const currentExerciseSession = JSON.parse(localStorage.getItem(`exerciseSession_${userId}`) || '{"exercises": []}');
       
       localStorage.setItem(`exerciseSession_${userId}`, JSON.stringify({
