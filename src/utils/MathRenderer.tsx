@@ -1,73 +1,54 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
+// @ts-ignore
+import katex from 'katex';
+import 'katex/dist/katex.min.css';
 
-interface MathRendererProps {
+interface MathProps {
   math: string;
   block?: boolean;
+  errorColor?: string;
+  renderError?: (error: Error) => React.ReactNode;
 }
 
-// Un componente simple para renderizar expresiones matemáticas
-const MathRenderer: React.FC<MathRendererProps> = ({ math, block = false }) => {
-  // Reemplazar símbolos matemáticos comunes con representaciones de texto
-  const formatMath = (formula: string): string => {
-    let result = formula;
-    
-    // Procesar raíces cuadradas con contenido entre llaves
-    result = result.replace(/\\sqrt\{([^{}]+)\}/g, (match, content) => {
-      return `√(${content})`;
-    });
-    
-    // Reemplazar expresiones simples
-    result = result
-      .replace(/\^2/g, '²')  // Cuadrado
-      .replace(/\^3/g, '³')  // Cubo
-      .replace(/\//g, '÷')   // División
-      .replace(/\*/g, '×')   // Multiplicación
-      .replace(/sqrt\((\w+)\)/g, '√$1') // Raíz cuadrada de una variable simple
-      .replace(/sqrt/g, '√')  // Raíz cuadrada básica
-      .replace(/\\frac\{([^{}]+)\}\{([^{}]+)\}/g, '$1/$2') // Fracciones
-      .replace(/\^/g, 'ᵏ')   // Exponentes generales
-      .replace(/pi/g, 'π')   // Pi
-      .replace(/theta/g, 'θ'); // Theta
-    
-    return result;
-  };
+const MathRenderer: React.FC<MathProps> = ({
+  math,
+  block = false,
+  errorColor,
+  renderError,
+}) => {
+  const containerRef = useRef<HTMLSpanElement>(null);
 
-  const renderStyles = {
-    fontFamily: "'Cambria Math', 'Times New Roman', serif",
-    lineHeight: 1.5
-  };
+  useEffect(() => {
+    if (!containerRef.current) return;
 
-  if (block) {
-    return (
-      <div className="math-block" style={{ 
-        textAlign: 'center', 
-        margin: '16px 0',
-        fontSize: '1.5rem',
-        fontWeight: 500,
-        ...renderStyles
-      }}>
-        {formatMath(math)}
-      </div>
-    );
-  }
+    try {
+      katex.render(math, containerRef.current, {
+        displayMode: block,
+        errorColor,
+        throwOnError: !!renderError,
+      });
+    } catch (error) {
+      if (renderError && error instanceof Error) {
+        containerRef.current.innerHTML = '';
+        const errorNode = document.createElement('span');
+        errorNode.textContent = error.message;
+        containerRef.current.appendChild(errorNode);
+      }
+      console.error('Error rendering math expression:', error);
+    }
+  }, [math, block, errorColor, renderError]);
 
-  return (
-    <span className="math-inline" style={{ 
-      fontWeight: 500,
-      ...renderStyles
-    }}>
-      {formatMath(math)}
-    </span>
-  );
+  return <span ref={containerRef} />;
 };
 
-// Componentes para mantener compatibilidad
-export const InlineMath: React.FC<{ math: string }> = ({ math }) => (
-  <MathRenderer math={math} block={false} />
+export const InlineMath: React.FC<Omit<MathProps, 'block'>> = (props) => (
+  <MathRenderer {...props} block={false} />
 );
 
-export const BlockMath: React.FC<{ math: string }> = ({ math }) => (
-  <MathRenderer math={math} block={true} />
+export const BlockMath: React.FC<Omit<MathProps, 'block'>> = (props) => (
+  <div className="math-block">
+    <MathRenderer {...props} block={true} />
+  </div>
 );
 
 export default MathRenderer; 
