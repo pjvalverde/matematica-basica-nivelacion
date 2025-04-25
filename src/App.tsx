@@ -137,54 +137,51 @@ const App: FC = () => {
         }
     };
   return (
-        <div className="app-container">
-            <Header user={user} handleLogout={handleLogout} />
-            <main>
-                {user ? (
-                    <ExerciseCard
-                        userAnswer={userAnswer}
-                        setUserAnswer={setUserAnswer}
-                        exerciseType={exerciseType}
-                        setExerciseType={setExerciseType}
-                        difficulty={difficulty}
-                        setDifficulty={setDifficulty}
-                        currentExercise={currentExercise}
-                        setCurrentExercise={setCurrentExercise}
-                        solution={solution}
-                        setSolution={setSolution}
-                        showSolution={showSolution}
-                        setShowSolution={setShowSolution}
-                        isCorrect={isCorrect}
-                        setIsCorrect={setIsCorrect}
-                        usePredefined={usePredefined}
-                        setUsePredefined={setUsePredefined}
-                        predefinedExercises={predefinedExercises}
-                        setPredefinedExercises={setPredefinedExercises}
-                        currentExerciseIndex={currentExerciseIndex}
-                        setCurrentExerciseIndex={setCurrentExerciseIndex}
-                        toggleExerciseMode={toggleExerciseMode}
-                        generateNewExercise={generateNewExercise}
-                        exercise={currentExercise}
-                        onCheck={checkAnswer}
-                        onReveal={revealSolution}
-                    />
-                ) : (
-                    <>
-                        {selectedSection === 'login' && (
-                            <Login handleLogin={handleLogin} onRegisterClick={() => setSelectedSection('register')} />
-                        )}
-                        {selectedSection === 'register' && (
-                            <Register
-                                handleRegister={handleRegister}
-                                onLoginClick={() => setSelectedSection('login')}
-                            />
-                        )}
-                        {selectedSection === 'exercises' && <div></div>}
-                    </>                    
-                )}
-            </main>
-            <Footer />
-        </div>
+    <div className="app-container">
+      <Header user={user} handleLogout={handleLogout} />
+      <main>
+        {user ? (
+          <ExerciseCard
+            userAnswer={userAnswer}
+            setUserAnswer={setUserAnswer}
+            exerciseType={exerciseType}
+            setExerciseType={setExerciseType}
+            difficulty={difficulty}
+            setDifficulty={setDifficulty}
+            currentExercise={currentExercise}
+            setCurrentExercise={setCurrentExercise}
+            solution={solution}
+            setSolution={setSolution}
+            showSolution={showSolution}
+            setShowSolution={setShowSolution}
+            isCorrect={isCorrect}
+            setIsCorrect={setIsCorrect}
+            usePredefined={usePredefined}
+            setUsePredefined={setUsePredefined}
+            predefinedExercises={predefinedExercises}
+            setPredefinedExercises={setPredefinedExercises}
+            currentExerciseIndex={currentExerciseIndex}
+            setCurrentExerciseIndex={setCurrentExerciseIndex}
+            toggleExerciseMode={toggleExerciseMode}
+            generateNewExercise={generateNewExercise}
+            exercise={currentExercise}
+            onCheck={checkAnswer}
+            onReveal={revealSolution}
+          />
+        ) : (
+          <>
+            {selectedSection === 'login' && (
+              <Login handleLogin={handleLogin} onRegisterClick={() => setSelectedSection('register')} />
+            )}
+            {selectedSection === 'register' && (
+              <Register handleRegister={handleRegister} onLoginClick={() => setSelectedSection('login')} />
+            )}
+            {selectedSection === 'exercises' && <div></div>}
+          </>
+        )}
+      </main>
+      <Footer />
+    </div>
   );
 };
 export default App;
