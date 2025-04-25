@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { BlockMath, InlineMath } from '../utils/MathRenderer';
 import './FactorizationExercises.css';
+import { addPointsToUser, getUserProfile } from '../firebase/userService';
+import { db } from '../firebase/firebaseConfig';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 // Tipos de ejercicios
 enum ExerciseType {
@@ -31,6 +34,13 @@ interface Exercise {
   points: number;
 }
 
+// Interfaz para usuario
+interface User {
+  uid: string;
+  email: string;
+  displayName?: string;
+}
+
 // Función para generar un ID único
 const generateId = () => {
   return Math.random().toString(36).substring(2, 15);
@@ -55,10 +65,10 @@ const generateExercise = (type: ExerciseType, difficulty: DifficultyLevel): Exer
       exercise.points = 1;
       break;
     case DifficultyLevel.MEDIUM:
-      exercise.points = 3;
+      exercise.points = 2; // Cambiado de 3 a 2 según la petición
       break;
     case DifficultyLevel.HARD:
-      exercise.points = 5;
+      exercise.points = 3; // Cambiado de 5 a 3 según la petición
       break;
   }
 
@@ -259,14 +269,60 @@ const generateExercise = (type: ExerciseType, difficulty: DifficultyLevel): Exer
 };
 
 // Componente principal de ejercicios de factorización
-const FactorizationExercises: React.FC = () => {
+interface FactorizationExercisesProps {
+  user?: User | null;
+}
+
+const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user }) => {
   const [exerciseType, setExerciseType] = useState<ExerciseType>(ExerciseType.BASIC);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(DifficultyLevel.EASY);
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
   const [userAnswer, setUserAnswer] = useState('');
   const [showSolution, setShowSolution] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [showLatexGuide, setShowLatexGuide] = useState(false);  
+  const [showLatexGuide, setShowLatexGuide] = useState(false);
+  const [userPoints, setUserPoints] = useState<number>(0);
+  const [totalExercises, setTotalExercises] = useState<number>(0);
+
+  // Cargar puntos del usuario al iniciar
+  useEffect(() => {
+    const loadUserPoints = async () => {
+      if (user?.uid) {
+        try {
+          // Intentar obtener perfil de usuario
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            setUserPoints(userData.totalPoints || 0);
+            setTotalExercises(userData.exercisesCompleted || 0);
+          } else {
+            // Si el usuario no existe, creamos un perfil básico
+            await setDoc(userDocRef, {
+              email: user.email,
+              displayName: user.displayName,
+              totalPoints: 0,
+              exercisesCompleted: 0,
+              created: new Date(),
+              lastActive: new Date()
+            });
+            setUserPoints(0);
+            setTotalExercises(0);
+          }
+        } catch (error) {
+          console.error("Error loading user points:", error);
+          // En caso de error, almacenamos localmente
+          const localPoints = localStorage.getItem(`points_${user.uid}`);
+          if (localPoints) {
+            setUserPoints(Number(localPoints));
+          }
+        }
+      }
+    };
+    
+    loadUserPoints();
+  }, [user]);
 
   // Generar un nuevo ejercicio
   const generateNewExercise = () => {
@@ -275,18 +331,68 @@ const FactorizationExercises: React.FC = () => {
     setUserAnswer('');
     setShowSolution(false);
     setIsCorrect(null);
-    
   };
 
-  // Verificar respuesta
-  const checkAnswer = () => {
+  // Verificar respuesta con mejor manejo
+  const checkAnswer = async () => {
     if (!currentExercise) return;
 
-    const normalizedUserAnswer = userAnswer.replace(/\s+/g, '').toLowerCase();
-    const normalizedSolution = currentExercise.solution.replace(/\s+/g, '').toLowerCase();
+    // Normalizar respuestas removiendo espacios y convirtiendo a minúsculas
+    let normalizedUserAnswer = userAnswer.replace(/\s+/g, '').toLowerCase();
+    let normalizedSolution = currentExercise.solution.replace(/\s+/g, '').toLowerCase();
     
-    const correct = normalizedUserAnswer === normalizedSolution;
+    // Reemplazar caracteres especiales por equivalentes
+    normalizedUserAnswer = normalizedUserAnswer
+      .replace(/\^(\d+)/g, '^$1') // Mantener exponentes
+      .replace(/\*/g, '') // Remover asteriscos de multiplicación
+      .replace(/sqrt/g, '√'); // Reemplazar sqrt por √
+      
+    normalizedSolution = normalizedSolution
+      .replace(/\^(\d+)/g, '^$1')
+      .replace(/\*/g, '')
+      .replace(/sqrt/g, '√');
+    
+    // Verificar múltiples formas válidas de la solución cuando aplique
+    let correct = normalizedUserAnswer === normalizedSolution;
+    
+    // Si no coincide, pero es una expresión factorizada, verificar formato alternativo
+    if (!correct && normalizedSolution.includes('(') && normalizedSolution.includes(')')) {
+      // Si la solución tiene factores (a+b)(c+d), también aceptamos (c+d)(a+b)
+      const factors = normalizedSolution.match(/\([^()]+\)/g);
+      if (factors && factors.length > 1) {
+        // Crear permutaciones de los factores
+        const permutations = [];
+        for (let i = 0; i < factors.length; i++) {
+          for (let j = i + 1; j < factors.length; j++) {
+            const perm1 = normalizedSolution.replace(factors[i] + factors[j], factors[j] + factors[i]);
+            permutations.push(perm1);
+          }
+        }
+        // Verificar si la respuesta del usuario coincide con alguna permutación
+        correct = permutations.some(perm => normalizedUserAnswer === perm);
+      }
+    }
+    
     setIsCorrect(correct);
+    
+    // Si es correcto y hay un usuario, actualizar puntos
+    if (correct && user?.uid) {
+      try {
+        // Actualizar puntos en Firebase
+        const result = await addPointsToUser(user.uid, currentExercise.points);
+        if (result) {
+          setUserPoints(result.totalPoints);
+          setTotalExercises(result.exercisesCompleted);
+        }
+      } catch (error) {
+        console.error("Error updating points:", error);
+        // En caso de error, almacenar localmente
+        const currentPoints = Number(localStorage.getItem(`points_${user.uid}`)) || 0;
+        const newPoints = currentPoints + currentExercise.points;
+        localStorage.setItem(`points_${user.uid}`, newPoints.toString());
+        setUserPoints(newPoints);
+      }
+    }
   };
 
   // Revelar solución
@@ -333,6 +439,7 @@ const FactorizationExercises: React.FC = () => {
         <div className="exercise-header">
           <div className="exercise-type">{getExerciseTypeName(currentExercise.type)}</div>
           <div className="exercise-difficulty">{currentExercise.difficulty}</div>
+          <div className="exercise-points">Valor: {currentExercise.points} {currentExercise.points === 1 ? 'moneda' : 'monedas'}</div>
         </div>
 
         {currentExercise.context && (
@@ -354,7 +461,7 @@ const FactorizationExercises: React.FC = () => {
 
         {isCorrect === true && (
           <div className="correct-feedback">
-            ¡Correcto! Has ganado {currentExercise.points} punto{currentExercise.points !== 1 ? 's' : ''}.
+            ¡Correcto! Has ganado {currentExercise.points} {currentExercise.points === 1 ? 'moneda' : 'monedas'}.
           </div>
         )}
 
@@ -446,6 +553,19 @@ const FactorizationExercises: React.FC = () => {
     <div className="factorization-exercises-container">
       <h2 className="factorization-exercises-title">Ejercicios de Factorización</h2>
       
+      {user && (
+        <div className="user-stats">
+          <div className="user-points">
+            <span className="stats-label">Monedas:</span> 
+            <span className="stats-value">{userPoints}</span>
+          </div>
+          <div className="user-exercises">
+            <span className="stats-label">Ejercicios completados:</span> 
+            <span className="stats-value">{totalExercises}</span>
+          </div>
+        </div>
+      )}
+      
       <div className="exercise-filters">
         <div className="filter-group">
           <label htmlFor="exercise-type">Tipo de ejercicio:</label>
@@ -470,9 +590,9 @@ const FactorizationExercises: React.FC = () => {
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as DifficultyLevel)}
           >
-            <option value={DifficultyLevel.EASY}>Fácil (1 punto)</option>
-            <option value={DifficultyLevel.MEDIUM}>Medio (3 puntos)</option>
-            <option value={DifficultyLevel.HARD}>Difícil (5 puntos)</option>
+            <option value={DifficultyLevel.EASY}>Fácil (1 moneda)</option>
+            <option value={DifficultyLevel.MEDIUM}>Medio (2 monedas)</option>
+            <option value={DifficultyLevel.HARD}>Difícil (3 monedas)</option>
           </select>
         </div>
         

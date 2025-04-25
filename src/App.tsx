@@ -10,6 +10,14 @@ import FactorizationExercises from './components/FactorizationExercises';
 interface SimulatedUser {
   email: string;
   displayName?: string;
+  emailVerified: boolean;
+  isAnonymous: boolean;
+  metadata: {
+    creationTime?: string;
+    lastSignInTime?: string;
+  };
+  providerData: any[];
+  uid: string;
 }
 
 const App: FC = () => {
@@ -20,7 +28,17 @@ const App: FC = () => {
   const handleRegister = async (email: string, password: string) => {
     setLoading(true);
     // Simulamos crear un usuario
-    setUser({ email });
+    setUser({ 
+      email, 
+      emailVerified: false,
+      isAnonymous: false,
+      metadata: {
+        creationTime: new Date().toISOString(),
+        lastSignInTime: new Date().toISOString()
+      },
+      providerData: [],
+      uid: Math.random().toString(36).substring(2, 15)
+    });
     setSelectedSection('exercises');
     setLoading(false);
   };
@@ -28,7 +46,17 @@ const App: FC = () => {
   const handleLogin = async (email: string, password: string) => {
     setLoading(true);
     // Simulamos iniciar sesión
-    setUser({ email });
+    setUser({ 
+      email, 
+      emailVerified: false,
+      isAnonymous: false,
+      metadata: {
+        creationTime: new Date().toISOString(),
+        lastSignInTime: new Date().toISOString()
+      },
+      providerData: [],
+      uid: Math.random().toString(36).substring(2, 15)
+    });
     setSelectedSection('exercises');
     setLoading(false);
   };
@@ -54,7 +82,7 @@ const App: FC = () => {
           <Register handleRegister={handleRegister} onLoginClick={() => setSelectedSection('login')} />
         )}
         {(user || selectedSection === 'exercises') && (
-          <FactorizationExercises />
+          <FactorizationExercises user={user} />
         )}
       </div>
       <Footer />

@@ -1,9 +1,22 @@
 import React from 'react';
 import './Header.css';
-import { User } from 'firebase/auth';
+
+// Define our own user interface instead of importing from firebase
+interface SimulatedUser {
+  email: string;
+  displayName?: string;
+  emailVerified: boolean;
+  isAnonymous: boolean;
+  metadata: {
+    creationTime?: string;
+    lastSignInTime?: string;
+  };
+  providerData: any[];
+  uid: string;
+}
 
 interface HeaderProps {
-  user: User | null;
+  user: SimulatedUser | null;
   handleLogout: () => void;
 }
 
