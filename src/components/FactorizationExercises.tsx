@@ -261,7 +261,7 @@ const generateExercise = (type: ExerciseType, difficulty: DifficultyLevel): Exer
 
 // Componente principal de ejercicios de factorización
 const FactorizationExercises: React.FC = () => {
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const [exerciseType, setExerciseType] = useState<ExerciseType>(ExerciseType.BASIC);
   const [difficulty, setDifficulty] = useState<DifficultyLevel>(DifficultyLevel.EASY);
   const [currentExercise, setCurrentExercise] = useState<Exercise | null>(null);
@@ -284,8 +284,8 @@ const FactorizationExercises: React.FC = () => {
     setIsCorrect(null);
     
     // Guardar ejercicios en localStorage si hay un usuario
-    if (currentUser) {
-      const userId = currentUser.uid;
+    if (user) {
+      const userId = user.uid;
       const currentExerciseSession = JSON.parse(localStorage.getItem(`exerciseSession_${userId}`) || '{"exercises": [], "stats": {"completed": 0, "points": 0, "streak": 0}}');
       
       localStorage.setItem(`exerciseSession_${userId}`, JSON.stringify({
@@ -297,8 +297,8 @@ const FactorizationExercises: React.FC = () => {
 
   // Cargar datos del localStorage al iniciar
   useEffect(() => {
-    if (currentUser) {
-      const userId = currentUser.uid;
+    if (user) {
+      const userId = user.uid;
       const savedData = localStorage.getItem(`exerciseSession_${userId}`);
       
       if (savedData) {
@@ -310,7 +310,7 @@ const FactorizationExercises: React.FC = () => {
         }
       }
     }
-  }, [currentUser]);
+  }, [user]);
 
   // Verificar respuesta
   const checkAnswer = () => {
@@ -324,7 +324,7 @@ const FactorizationExercises: React.FC = () => {
     const correct = normalizedUserAnswer === normalizedSolution;
     setIsCorrect(correct);
     
-    if (correct && currentUser) {
+    if (correct && user) {
       // Actualizar estadísticas
       const newStats = {
         completed: stats.completed + 1,
@@ -335,7 +335,7 @@ const FactorizationExercises: React.FC = () => {
       setStats(newStats);
       
       // Guardar en localStorage
-      const userId = currentUser.uid;
+      const userId = user.uid;
       const currentExerciseSession = JSON.parse(localStorage.getItem(`exerciseSession_${userId}`) || '{"exercises": []}');
       
       localStorage.setItem(`exerciseSession_${userId}`, JSON.stringify({
@@ -351,7 +351,7 @@ const FactorizationExercises: React.FC = () => {
           }
         ]
       }));
-    } else if (!correct && currentUser) {
+    } else if (!correct && user) {
       // Reiniciar racha
       const newStats = {
         ...stats,
@@ -361,7 +361,7 @@ const FactorizationExercises: React.FC = () => {
       setStats(newStats);
       
       // Guardar en localStorage
-      const userId = currentUser.uid;
+      const userId = user.uid;
       const currentExerciseSession = JSON.parse(localStorage.getItem(`exerciseSession_${userId}`) || '{"exercises": []}');
       
       localStorage.setItem(`exerciseSession_${userId}`, JSON.stringify({
@@ -374,9 +374,9 @@ const FactorizationExercises: React.FC = () => {
   // Revelar solución
   const revealSolution = () => {
     setShowSolution(true);
-    if (currentUser && currentExercise) {
+    if (user && currentExercise) {
       // Marcar como incorrecto en las estadísticas
-      const userId = currentUser.uid;
+      const userId = user.uid;
       const currentExerciseSession = JSON.parse(localStorage.getItem(`exerciseSession_${userId}`) || '{"exercises": []}');
       
       localStorage.setItem(`exerciseSession_${userId}`, JSON.stringify({
