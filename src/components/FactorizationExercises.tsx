@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { BlockMath, InlineMath } from '../utils/MathRenderer';
 import './FactorizationExercises.css';
-import { addPointsToUser, getUserProfile } from '../firebase/userService';
+import { addCoinsToUser, getUserProfile } from '../firebase/userService';
 import { db } from '../firebase/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
@@ -295,14 +295,14 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
           
           if (userDoc.exists()) {
             const userData = userDoc.data();
-            setUserPoints(userData.totalPoints || 0);
+            setUserPoints(userData.totalCoins || 0);
             setTotalExercises(userData.exercisesCompleted || 0);
           } else {
             // Si el usuario no existe, creamos un perfil básico
             await setDoc(userDocRef, {
               email: user.email,
               displayName: user.displayName,
-              totalPoints: 0,
+              totalCoins: 0,
               exercisesCompleted: 0,
               created: new Date(),
               lastActive: new Date()
@@ -313,7 +313,7 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
         } catch (error) {
           console.error("Error loading user points:", error);
           // En caso de error, almacenamos localmente
-          const localPoints = localStorage.getItem(`points_${user.uid}`);
+          const localPoints = localStorage.getItem(`coins_${user.uid}`);
           if (localPoints) {
             setUserPoints(Number(localPoints));
           }
@@ -378,19 +378,19 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
     // Si es correcto y hay un usuario, actualizar puntos
     if (correct && user?.uid) {
       try {
-        // Actualizar puntos en Firebase
-        const result = await addPointsToUser(user.uid, currentExercise.points);
+        // Actualizar monedas en Firebase
+        const result = await addCoinsToUser(user.uid, currentExercise.points);
         if (result) {
-          setUserPoints(result.totalPoints);
+          setUserPoints(result.totalCoins);
           setTotalExercises(result.exercisesCompleted);
         }
       } catch (error) {
-        console.error("Error updating points:", error);
+        console.error("Error updating coins:", error);
         // En caso de error, almacenar localmente
-        const currentPoints = Number(localStorage.getItem(`points_${user.uid}`)) || 0;
-        const newPoints = currentPoints + currentExercise.points;
-        localStorage.setItem(`points_${user.uid}`, newPoints.toString());
-        setUserPoints(newPoints);
+        const currentCoins = Number(localStorage.getItem(`coins_${user.uid}`)) || 0;
+        const newCoins = currentCoins + currentExercise.points;
+        localStorage.setItem(`coins_${user.uid}`, newCoins.toString());
+        setUserPoints(newCoins);
       }
     }
   };

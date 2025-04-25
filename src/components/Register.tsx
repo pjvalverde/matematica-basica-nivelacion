@@ -2,7 +2,7 @@ import React, { useState, FormEvent } from 'react';
 import './Register.css';
 
 interface RegisterProps {
-  handleRegister: (email: string, password: string) => void;
+  handleRegister: (email: string, password: string, displayName?: string) => void;
   onLoginClick: () => void;
 }
 
@@ -10,6 +10,7 @@ const Register: React.FC<RegisterProps> = ({ handleRegister, onLoginClick }) => 
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [displayName, setDisplayName] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -31,11 +32,10 @@ const Register: React.FC<RegisterProps> = ({ handleRegister, onLoginClick }) => 
     setLoading(true);
     
     try {
-      // Versión simplificada para el despliegue - omitimos la autenticación con Firebase
-      // y simplemente llamamos a handleRegister directamente
-      handleRegister(email, password);
+      // Registrar el usuario con Firebase
+      await handleRegister(email, password, displayName || undefined);
     } catch (error: any) {
-      setError('Error al crear la cuenta. Por favor, inténtalo de nuevo.');
+      setError(error.message || 'Error al crear la cuenta. Por favor, inténtalo de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -47,6 +47,18 @@ const Register: React.FC<RegisterProps> = ({ handleRegister, onLoginClick }) => 
         <h2 className="register-title">Crear Cuenta</h2>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit} className="register-form">
+          <div className="form-group">
+            <label htmlFor="displayName" className="form-label">Nombre (opcional)</label>
+            <input
+              type="text"
+              id="displayName"
+              className="form-input"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              disabled={loading}
+              placeholder="Tu nombre para mostrar en el ranking"
+            />
+          </div>
           <div className="form-group">
             <label htmlFor="email" className="form-label">Correo Electrónico</label>
             <input

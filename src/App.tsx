@@ -1,88 +1,127 @@
-import React, { useState, FC } from 'react';
+import React, { useState, FC, useEffect } from 'react';
 import './App.css';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Login from './components/Login';
 import Register from './components/Register';
 import FactorizationExercises from './components/FactorizationExercises';
+import Leaderboard from './components/Leaderboard';
+import { registerUser, loginUser, logoutUser, getCurrentUser, onUserChange } from './firebase/authService';
+import { User } from 'firebase/auth';
 
-// Interfaz simplificada para simular un usuario
-interface SimulatedUser {
-  email: string;
-  displayName?: string;
-  emailVerified: boolean;
-  isAnonymous: boolean;
-  metadata: {
-    creationTime?: string;
-    lastSignInTime?: string;
-  };
-  providerData: any[];
-  uid: string;
-}
+// Tipo para las secciones disponibles en la aplicación
+type SectionType = 'login' | 'register' | 'exercises' | 'leaderboard';
 
 const App: FC = () => {
-  const [selectedSection, setSelectedSection] = useState<'login' | 'register' | 'exercises'>('login');
-  const [user, setUser] = useState<SimulatedUser | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<SectionType>('login');
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleRegister = async (email: string, password: string) => {
-    setLoading(true);
-    // Simulamos crear un usuario
-    setUser({ 
-      email, 
-      emailVerified: false,
-      isAnonymous: false,
-      metadata: {
-        creationTime: new Date().toISOString(),
-        lastSignInTime: new Date().toISOString()
-      },
-      providerData: [],
-      uid: Math.random().toString(36).substring(2, 15)
+  // Escuchar cambios de autenticación al cargar la app
+  useEffect(() => {
+    const unsubscribe = onUserChange((authUser) => {
+      setUser(authUser);
+      setLoading(false);
+      if (authUser && selectedSection === 'login') {
+        setSelectedSection('exercises');
+      }
     });
-    setSelectedSection('exercises');
-    setLoading(false);
+    
+    // Limpiar suscripción al desmontar
+    return () => unsubscribe();
+  }, [selectedSection]);
+
+  const handleRegister = async (email: string, password: string, displayName?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Registrar usuario con Firebase
+      await registerUser(email, password, displayName);
+      
+      // Después del registro exitoso, cambiar a sección de ejercicios
+      setSelectedSection('exercises');
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogin = async (email: string, password: string) => {
-    setLoading(true);
-    // Simulamos iniciar sesión
-    setUser({ 
-      email, 
-      emailVerified: false,
-      isAnonymous: false,
-      metadata: {
-        creationTime: new Date().toISOString(),
-        lastSignInTime: new Date().toISOString()
-      },
-      providerData: [],
-      uid: Math.random().toString(36).substring(2, 15)
-    });
-    setSelectedSection('exercises');
-    setLoading(false);
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Iniciar sesión con Firebase
+      await loginUser(email, password);
+      
+      // Después del inicio de sesión exitoso, cambiar a sección de ejercicios
+      setSelectedSection('exercises');
+    } catch (error: any) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
-    // Simulamos cerrar sesión
-    setUser(null);
-    setSelectedSection('login');
+    try {
+      setLoading(true);
+      
+      // Cerrar sesión con Firebase
+      await logoutUser();
+      
+      // Después del cierre de sesión, volver a la pantalla de login
+      setSelectedSection('login');
+    } catch (error: any) {
+      console.error("Error al cerrar sesión:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loading) {
+  // Función para cambiar entre secciones
+  const navigateTo = (section: SectionType) => {
+    setSelectedSection(section);
+  };
+
+  if (loading && !user) {
     return <div className="loading">Cargando...</div>;
   }
 
   return (
     <div className="app-container">
-      <Header user={user} handleLogout={handleLogout} />
+      <Header 
+        user={user} 
+        handleLogout={handleLogout} 
+        currentSection={selectedSection}
+        onNavigate={navigateTo}
+      />
       <div className="main-content">
+        {error && <div className="error-message">{error}</div>}
+        
         {!user && selectedSection === 'login' && (
-          <Login handleLogin={handleLogin} onRegisterClick={() => setSelectedSection('register')} />
+          <Login 
+            handleLogin={handleLogin} 
+            onRegisterClick={() => setSelectedSection('register')} 
+          />
         )}
+        
         {!user && selectedSection === 'register' && (
-          <Register handleRegister={handleRegister} onLoginClick={() => setSelectedSection('login')} />
+          <Register 
+            handleRegister={handleRegister} 
+            onLoginClick={() => setSelectedSection('login')} 
+          />
         )}
-        {(user || selectedSection === 'exercises') && (
+        
+        {user && selectedSection === 'exercises' && (
           <FactorizationExercises user={user} />
+        )}
+        
+        {user && selectedSection === 'leaderboard' && (
+          <Leaderboard currentUserId={user.uid} />
         )}
       </div>
       <Footer />

@@ -18,11 +18,10 @@ const Login: React.FC<LoginProps> = ({ handleLogin, onRegisterClick }) => {
     setLoading(true);
     
     try {
-      // Versión simplificada para el despliegue - omitimos la autenticación con Firebase
-      // y simplemente llamamos a handleLogin directamente
-      handleLogin(email, password);
+      // Llamar a la función de inicio de sesión proporcionada por el componente padre
+      await handleLogin(email, password);
     } catch (error: any) {
-      setError('Ocurrió un error al iniciar sesión. Por favor, intenta nuevamente.');
+      setError(error.message || 'Ocurrió un error al iniciar sesión. Por favor, intenta nuevamente.');
     } finally {
       setLoading(false);
     }

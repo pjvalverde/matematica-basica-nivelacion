@@ -2,7 +2,12 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-// Configuración de Firebase (reemplazar con tus propias credenciales)
+// IMPORTANTE: Reemplaza esta configuración con los datos de tu proyecto Firebase
+// Puedes encontrar esta información en la consola de Firebase:
+// 1. Ve a https://console.firebase.google.com
+// 2. Selecciona tu proyecto
+// 3. Haz clic en "Configuración del proyecto" (icono de engranaje)
+// 4. En la pestaña "General", desplázate hacia abajo hasta "Tus apps" y copia los detalles
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_AUTH_DOMAIN",
