@@ -137,47 +137,48 @@ const App: FC = () => {
         <div className="app-container">
             <Header user={user} handleLogout={handleLogout} />
             <main>
-            {user ? (
-              <ExerciseCard
-                exerciseType={exerciseType}
-                setExerciseType={setExerciseType}
-                usePredefined={usePredefined}
-                toggleExerciseMode={toggleExerciseMode}
-                difficulty={difficulty}
-                setDifficulty={setDifficulty}
-                generateNewExercise={generateNewExercise}
-                exercise={currentExercise}
-                solution={solution}
-                showSolution={showSolution}
-                setUserAnswer={() => {}}
-                isCorrect={isCorrect}
-                onCheck={checkAnswer}
-                setIsCorrect={setIsCorrect}
-                onReveal={revealSolution}
-                currentExercise={currentExercise}
-                setCurrentExercise={setCurrentExercise}
-                setSolution={setSolution}
-                setShowSolution={setShowSolution}
-               userAnswer={userAnswer}
-               predefinedExercises={predefinedExercises}
-               currentExerciseIndex={currentExerciseIndex}
-               setUsePredefined={setUsePredefined}
-               setPredefinedExercises={setPredefinedExercises}
-               setCurrentExerciseIndex={setCurrentExerciseIndex}
-              />
-              ) : (
+                {user ? (
+                    <ExerciseCard
+                        userAnswer={userAnswer}
+                        setUserAnswer={setUserAnswer}
+                        exerciseType={exerciseType}
+                        setExerciseType={setExerciseType}
+                        difficulty={difficulty}
+                        setDifficulty={setDifficulty}
+                        currentExercise={currentExercise}
+                        setCurrentExercise={setCurrentExercise}
+                        solution={solution}
+                        setSolution={setSolution}
+                        showSolution={showSolution}
+                        setShowSolution={setShowSolution}
+                        isCorrect={isCorrect}
+                        setIsCorrect={setIsCorrect}
+                        usePredefined={usePredefined}
+                        setUsePredefined={setUsePredefined}
+                        predefinedExercises={predefinedExercises}
+                        setPredefinedExercises={setPredefinedExercises}
+                        currentExerciseIndex={currentExerciseIndex}
+                        setCurrentExerciseIndex={setCurrentExerciseIndex}
+                        toggleExerciseMode={toggleExerciseMode}
+                        generateNewExercise={generateNewExercise}
+                        exercise={currentExercise}
+                        onCheck={checkAnswer}
+                        onReveal={revealSolution}
+                    />
+                ) : (
                     <>
                         {selectedSection === 'login' && (
                             <Login handleLogin={handleLogin} onRegisterClick={() => setSelectedSection('register')} />
                         )}
                         {selectedSection === 'register' && (
-              <Register
-                handleRegister={handleRegister}
-                onLoginClick={() => setSelectedSection('login')}
-              />
+                            <Register
+                                handleRegister={handleRegister}
+                                onLoginClick={() => setSelectedSection('login')}
+                            />
                         )}
-                    </>
-            )}
+                        {selectedSection === 'exercises' && <div></div>}
+                    </>                    
+                )}
             </main>
             <Footer />
         </div>
