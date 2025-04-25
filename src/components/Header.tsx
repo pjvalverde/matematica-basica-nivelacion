@@ -1,8 +1,15 @@
 import React from 'react';
 import './Header.css';
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  user: any;
+  handleLogout: () => void;
+}
+const Header: React.FC<HeaderProps> = ({ user, handleLogout }) => {
+
   return (
+
+
     <header className="header">
       <div className="header-container">
         <div className="header-logo-section">
@@ -18,10 +25,17 @@ const Header: React.FC = () => {
           </div>
         </div>
         
-        <div>
+        <div className='user-section'>
+        {user ? (
+          <>
+            <span className="user-email">{user.email}</span>
+            <button className="logout-button" onClick={handleLogout}>Logout</button>
+          </>
+        ) : (
           <button className="login-button">
-            Iniciar Sesión
-          </button>
+          Iniciar Sesión
+        </button>
+        )}
         </div>
       </div>
     </header>
