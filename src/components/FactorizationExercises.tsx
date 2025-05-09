@@ -477,12 +477,25 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
       );
     }
 
+    // MODIFICACIÓN CRUCIAL: Forzar el tipo y dificultad seleccionados por el usuario
+    // para asegurar que lo que se muestra coincide con lo que el usuario seleccionó
+    const displayType = exerciseType;  // Usar SIEMPRE el tipo seleccionado por el usuario
+    const displayDifficulty = difficulty;  // Usar SIEMPRE la dificultad seleccionada por el usuario
+    const displayPoints = displayDifficulty === DifficultyLevel.EASY ? 1 : 
+                         displayDifficulty === DifficultyLevel.MEDIUM ? 2 : 3;
+
+    console.log('RENDERIZANDO EJERCICIO CON TIPO Y DIFICULTAD FORZADOS:');
+    console.log('- Tipo seleccionado por usuario:', exerciseType);
+    console.log('- Tipo original del ejercicio:', currentExercise.type);
+    console.log('- Dificultad seleccionada por usuario:', difficulty);
+    console.log('- Dificultad original del ejercicio:', currentExercise.difficulty);
+
     return (
       <div className="exercise-container">
         <div className="exercise-header">
-          <div className="exercise-type">{getExerciseTypeName(currentExercise.type)}</div>
-          <div className="exercise-difficulty">{currentExercise.difficulty}</div>
-          <div className="exercise-points">Valor: {currentExercise.points} {currentExercise.points === 1 ? 'moneda' : 'monedas'}</div>
+          <div className="exercise-type">{getExerciseTypeName(displayType)}</div>
+          <div className="exercise-difficulty">{displayDifficulty}</div>
+          <div className="exercise-points">Valor: {displayPoints} {displayPoints === 1 ? 'moneda' : 'monedas'}</div>
         </div>
 
         {currentExercise.context && (
@@ -504,7 +517,7 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
 
         {isCorrect === true && (
           <div className="correct-feedback">
-            ¡Correcto! Has ganado {currentExercise.points} {currentExercise.points === 1 ? 'moneda' : 'monedas'}.
+            ¡Correcto! Has ganado {displayPoints} {displayPoints === 1 ? 'moneda' : 'monedas'}.
           </div>
         )}
 
