@@ -41,18 +41,23 @@ export const generateAIExercises = async (
     if (response.data && response.data.success && response.data.exercises) {
       console.log("Ejercicios recibidos:", response.data.exercises);
       
-      // Asegúrate de que cada ejercicio tenga los metadatos correctos
-      const enhancedExercises = response.data.exercises.map((exercise: any) => ({
+      // MODIFICACIÓN CRÍTICA: Forzar explícitamente la dificultad y tipo seleccionados
+      // Esto garantiza que los ejercicios siempre respeten lo que el usuario seleccionó
+      const forcedExercises = response.data.exercises.map((exercise: any) => ({
         ...exercise,
+        // Sobreescribir completamente los metadatos con los seleccionados por el usuario
         metadata: {
-          ...(exercise.metadata || {}), // Mantener otros metadatos si existen
           generatedByAI: true,
-          difficulty: difficulty,
-          type: type || ""
+          difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
+          type: type || "",       // FORZAR el tipo que seleccionó el usuario
+          forcedByApi: true       // Añadir indicador para debugging
         }
       }));
       
-      return enhancedExercises;
+      console.log("Ejercicios con dificultad y tipo FORZADOS:", forcedExercises);
+      console.log("FORZANDO dificultad:", difficulty, " y tipo:", type);
+      
+      return forcedExercises;
     } else {
       console.error("Respuesta inválida de la función:", response.data);
       throw new Error('No se recibieron ejercicios válidos');
@@ -75,9 +80,11 @@ export const generateAIExercises = async (
     return backupExercises.map(exercise => ({
       ...exercise,
       metadata: {
-        generatedByAI: false, // indicar que no son de la IA sino de respaldo
-        difficulty: difficulty,
-        type: type || ""
+        generatedByAI: false,
+        difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
+        type: type || "",       // FORZAR el tipo que seleccionó el usuario
+        forcedByApi: true,      // Añadir indicador para debugging
+        isBackup: true
       }
     }));
   }

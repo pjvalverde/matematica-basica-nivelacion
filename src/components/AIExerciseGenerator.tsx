@@ -616,7 +616,7 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
             }
           }
           
-          console.log(`Generando ejercicios con IA: Tema=${topic}, Dificultad=${difficulty}, Tipo=${typeParam}`);
+          console.log(`[AI GENERATOR] Generando ejercicios con IA: Tema=${topic}, Dificultad=${difficulty}, Tipo=${typeParam}`);
           
           const exercises = await generateAIExercises(
             topic, 
@@ -625,33 +625,36 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
           );
           
           if (exercises && Array.isArray(exercises)) {
-            console.log('Ejercicios recibidos de la API:', exercises);
+            console.log('[AI GENERATOR] Ejercicios recibidos:', exercises);
+            console.log('[AI GENERATOR] Metadatos del primer ejercicio:', exercises[0]?.metadata);
             
-            // Verificar si los ejercicios tienen los metadatos adecuados
-            if (exercises[0] && !exercises[0].metadata) {
-              console.warn('Los ejercicios no tienen metadatos, añadiendo...');
-              // Añadir metadatos a los ejercicios generados para preservar selecciones
-              const enhancedExercises = exercises.map(ex => ({
-                ...ex,
-                metadata: {
-                  generatedByAI: true,
-                  difficulty: difficulty,
-                  type: typeParam
-                }
-              }));
-              onExercisesGenerated(enhancedExercises);
-            } else {
-              console.log('Ejercicios con metadatos:', exercises[0].metadata);
-              onExercisesGenerated(exercises);
+            // Comprobar que los ejercicios tienen los metadatos correctos
+            const correctMetadata = exercises.every(ex => 
+              ex.metadata && 
+              ex.metadata.difficulty === difficulty && 
+              (ex.metadata.type === typeParam || !typeParam)
+            );
+            
+            if (!correctMetadata) {
+              console.warn('[AI GENERATOR] ADVERTENCIA: Algunos ejercicios tienen metadatos incorrectos.');
             }
+            
+            console.log('[AI GENERATOR] Ejercicios se pasan al componente padre con metadatos:', 
+              exercises.map(ex => ({
+                problem: ex.problem.substring(0, 20) + '...',
+                metadata: ex.metadata
+              }))
+            );
+            
+            onExercisesGenerated(exercises);
           } else {
             setError('No se pudieron generar ejercicios. Usando ejercicios predefinidos.');
-            console.error('Respuesta inválida o vacía de la API:', exercises);
+            console.error('[AI GENERATOR] Respuesta inválida o vacía de la API:', exercises);
             const localExercises = getLocalExercises(topic, difficulty, exerciseType);
             onExercisesGenerated(localExercises);
           }
         } catch (apiError) {
-          console.error("Error al llamar a la API:", apiError);
+          console.error("[AI GENERATOR] Error al llamar a la API:", apiError);
           setError('No se pudo conectar con la IA. Usando ejercicios predefinidos.');
           const localExercises = getLocalExercises(topic, difficulty, exerciseType);
           onExercisesGenerated(localExercises);
@@ -666,16 +669,19 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
           metadata: {
             generatedByAI: false,
             difficulty: difficulty,
-            type: exerciseType
+            type: exerciseType,
+            forcedByGenerator: true
           }
         }));
+        
+        console.log('[AI GENERATOR] Usando ejercicios locales con metadatos forzados:', enhancedLocalExercises);
         
         setTimeout(() => {
           onExercisesGenerated(enhancedLocalExercises);
         }, 300); // Pequeña demora para simular procesamiento
       }
     } catch (error) {
-      console.error('Error al generar ejercicios:', error);
+      console.error('[AI GENERATOR] Error general al generar ejercicios:', error);
       setError('Ha ocurrido un error. Mostrando ejercicios predefinidos.');
       
       // En caso de error, usar ejercicios predefinidos
@@ -687,7 +693,9 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
         metadata: {
           generatedByAI: false,
           difficulty: difficulty,
-          type: exerciseType
+          type: exerciseType,
+          forcedByGenerator: true,
+          isBackup: true
         }
       }));
       
