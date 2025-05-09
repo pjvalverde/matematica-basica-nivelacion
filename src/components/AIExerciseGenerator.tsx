@@ -501,6 +501,9 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
   const [exerciseType, setExerciseType] = useState<string>('');
   const [useAI, setUseAI] = useState<boolean>(true); // Por defecto, activamos la IA
+  
+  // NUEVO: Flag que indica que la UI debe ser forzada
+  const [forceUI, setForceUI] = useState<boolean>(true);
 
   // Opciones de tipo según el tema
   const typeOptions = topic === 'factorization' 
@@ -524,7 +527,12 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
     setError(null);
     
     try {
-      // SOLUCIÓN DEFINITIVA:
+      // Activamos el flag de forzar UI
+      setForceUI(true);
+
+      console.log("🔒 INICIANDO GENERACIÓN CON TIPO:", exerciseType, "Y DIFICULTAD:", difficulty);
+      
+      // SOLUCIÓN EXTREMA: Garantizar metadatos correctos en todas las etapas
       // 1. Generar ejercicios locales que coincidan EXACTAMENTE con lo seleccionado
       // 2. Si se usa IA, intentar usarla, pero añadir metadatos forzados
       // 3. Garantizar que el componente padre recibe siempre ejercicios con los metadatos correctos
@@ -542,37 +550,38 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
           difficulty: difficulty,        // FORZAR la dificultad seleccionada
           type: exerciseType,            // FORZAR el tipo seleccionado
           originalType: exerciseType,    // Guardar tipo original para debugging
-          forcedByGenerator: true        // Indicador que los metadatos fueron forzados aquí
+          forcedByGenerator: true,       // Indicador que los metadatos fueron forzados aquí
+          timestamp: new Date().getTime() // Timestamp para debugging
         }
       }));
       
-      console.log('[AI GENERATOR] Ejercicios con metadatos FORZADOS:', enhancedExercises);
-      console.log('[AI GENERATOR] FORZANDO dificultad:', difficulty);
-      console.log('[AI GENERATOR] FORZANDO tipo:', exerciseType);
+      console.log('🔒 Ejercicios con metadatos FORZADOS:', enhancedExercises);
+      console.log('🔒 FORZANDO dificultad:', difficulty);
+      console.log('🔒 FORZANDO tipo:', exerciseType);
       
       if (useAI) {
         try {
           // Intentar usar la IA, pero con un timeout más corto
-          console.log(`[AI GENERATOR] Intentando generar ejercicios con IA: Tema=${topic}, Dificultad=${difficulty}, Tipo=${exerciseType}`);
+          console.log(`🔒 Intentando generar ejercicios con IA: Tema=${topic}, Dificultad=${difficulty}, Tipo=${exerciseType}`);
           
           // Intentamos llamar a la API, pero con un timeout
           const apiPromise = generateAIExercises(topic, difficulty, exerciseType);
           
-          // Si la API tarda más de 8 segundos, usamos los ejercicios locales para no hacer esperar al usuario
+          // Si la API tarda más de 5 segundos, usamos los ejercicios locales para no hacer esperar al usuario
           const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Timeout al llamar a la API')), 8000);
+            setTimeout(() => reject(new Error('Timeout al llamar a la API')), 5000);
           });
           
           // Competencia entre la API y el timeout
           const apiExercises = await Promise.race([apiPromise, timeoutPromise]) as any[];
           
           if (apiExercises && Array.isArray(apiExercises) && apiExercises.length > 0) {
-            console.log('[AI GENERATOR] API devolvió ejercicios:', apiExercises);
+            console.log('🔒 API devolvió ejercicios:', apiExercises);
             
-            // FORZAR los metadatos aunque vengan de la API
+            // FORZAR los metadatos aunque vengan de la API - EXTREMADAMENTE IMPORTANTE
             const forcedApiExercises = apiExercises.map(ex => ({
               ...ex,
-              // ESTOS METADATOS SON SAGRADOS - NO SE DEBEN MODIFICAR EN NINGÚN LUGAR
+              // ESTOS METADATOS SON COMPLETAMENTE FORZADOS - NO SE RESPETA NADA DE LA API
               metadata: {
                 forceUI: true,                 // Indicador para la UI que estos valores son forzados
                 generatedByAI: true,           // Estos ejercicios vienen de la IA
@@ -580,11 +589,23 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
                 type: exerciseType,            // FORZAR el tipo seleccionado
                 originalType: exerciseType,    // Guardar tipo original para debugging
                 forcedByGenerator: true,       // Indicador que los metadatos fueron forzados aquí
-                fromApi: true                  // Indicador que vinieron de la API
-              }
+                fromApi: true,                 // Indicador que vinieron de la API
+                timestamp: new Date().getTime() // Timestamp para debugging
+              },
+              // NUEVO: FORZAR directamente los valores en el objeto principal
+              difficultyOverride: difficulty,
+              typeOverride: exerciseType
             }));
             
-            console.log('[AI GENERATOR] Ejercicios de API con metadatos FORZADOS:', forcedApiExercises);
+            console.log('🔒 Ejercicios de API con metadatos FORZADOS:', forcedApiExercises);
+            
+            // NUEVO: Guardar en localStorage para debugging y recuperación
+            localStorage.setItem('last_exercises_metadata', JSON.stringify({
+              timestamp: new Date().toString(),
+              difficulty: difficulty,
+              exerciseType: exerciseType,
+              forceUI: true
+            }));
             
             // Usar los ejercicios de la API con metadatos forzados
             onExercisesGenerated(forcedApiExercises);
@@ -593,21 +614,30 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
           }
           
           // Si llegamos aquí, la API falló o timeout
-          console.warn('[AI GENERATOR] API falló o timeout, usando ejercicios locales');
+          console.warn('⚠️ API falló o timeout, usando ejercicios locales');
           setError('No se pudo conectar con la IA. Usando ejercicios predefinidos.');
         } catch (apiError) {
-          console.error("[AI GENERATOR] Error al llamar a la API:", apiError);
+          console.error("⚠️ Error al llamar a la API:", apiError);
           setError('No se pudo conectar con la IA. Usando ejercicios predefinidos.');
         }
       }
       
       // Si no se usa IA o falló, usar los ejercicios locales ya preparados
-      console.log('[AI GENERATOR] Usando ejercicios locales con metadatos forzados');
+      console.log('🔒 Usando ejercicios locales con metadatos forzados');
+      
+      // NUEVO: Guardar en localStorage para debugging y recuperación
+      localStorage.setItem('last_exercises_metadata', JSON.stringify({
+        timestamp: new Date().toString(),
+        difficulty: difficulty,
+        exerciseType: exerciseType,
+        forceUI: true,
+        source: 'local'
+      }));
       
       // SIEMPRE enviamos ejercicios con metadatos forzados que coinciden exactamente con la selección
       onExercisesGenerated(enhancedExercises);
     } catch (error) {
-      console.error('[AI GENERATOR] Error general:', error);
+      console.error('⚠️ Error general:', error);
       setError('Ha ocurrido un error. Usando ejercicios predefinidos.');
       
       // En caso de error extremo, generar ejercicios básicos con metadatos forzados
@@ -621,10 +651,23 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
             generatedByAI: false,
             difficulty: difficulty,
             type: exerciseType,
-            isEmergencyBackup: true
-          }
+            isEmergencyBackup: true,
+            timestamp: new Date().getTime()
+          },
+          // NUEVO: FORZAR directamente los valores en el objeto principal
+          difficultyOverride: difficulty,
+          typeOverride: exerciseType
         }
       ];
+      
+      // NUEVO: Guardar en localStorage para debugging
+      localStorage.setItem('last_exercises_metadata', JSON.stringify({
+        timestamp: new Date().toString(),
+        difficulty: difficulty,
+        exerciseType: exerciseType,
+        forceUI: true,
+        source: 'emergency'
+      }));
       
       onExercisesGenerated(backupExercises);
     } finally {
@@ -668,7 +711,6 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
           </select>
         </div>
         
-        {/* Opción visible para todos los usuarios */}
         <div className="control-group checkbox-control">
           <label>
             <input 
@@ -677,6 +719,18 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
               onChange={(e) => setUseAI(e.target.checked)}
             />
             Usar IA para generar (Plan Blaze)
+          </label>
+        </div>
+        
+        {/* NUEVO: Opción para forzar la UI */}
+        <div className="control-group checkbox-control">
+          <label>
+            <input 
+              type="checkbox" 
+              checked={forceUI}
+              onChange={(e) => setForceUI(e.target.checked)}
+            />
+            Forzar UI (Mantener selecciones)
           </label>
         </div>
         

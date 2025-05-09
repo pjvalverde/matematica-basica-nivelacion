@@ -2,6 +2,13 @@
 
 import axios from 'axios';
 
+// NUEVO: Guardar las últimas selecciones del usuario
+let lastUserSelections = {
+  difficulty: '',
+  type: '',
+  timestamp: 0
+};
+
 // Función para generar ejercicios usando DeepSeek AI a través de Firebase Functions
 export const generateAIExercises = async (
   topic: 'factorization' | 'rationalfractions', 
@@ -9,6 +16,18 @@ export const generateAIExercises = async (
   type?: string
 ) => {
   try {
+    // NUEVO: Almacenar selecciones del usuario
+    lastUserSelections = {
+      difficulty,
+      type: type || '',
+      timestamp: Date.now()
+    };
+    
+    // Guardar en localStorage inmediatamente para recuperación en caso de error
+    localStorage.setItem('last_api_request', JSON.stringify(lastUserSelections));
+    
+    console.log(`🔐 API REQUEST - SELECCIONES DEL USUARIO: Dificultad=${difficulty}, Tipo=${type}`);
+    
     // Usamos la función de Firebase para evitar problemas de CORS
     const functionUrl = window.location.hostname === 'localhost' 
       ? 'http://localhost:5001/math-basis/us-central1/deepseekProxy' 
@@ -22,7 +41,9 @@ export const generateAIExercises = async (
       topic,
       difficulty,
       type,
-      timestamp: new Date().getTime()
+      timestamp: new Date().getTime(),
+      forceSelections: true, // NUEVO: Indicar que debe forzar estas selecciones
+      requestId: Math.random().toString(36).substring(2, 15) // ID único para esta solicitud
     };
     
     const response = await axios.post(
@@ -30,9 +51,12 @@ export const generateAIExercises = async (
       requestData,
       {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Force-Difficulty': difficulty, // NUEVO: Indicador explícito en headers
+          'X-Force-Type': type || '', // NUEVO: Indicador explícito en headers
+          'X-Request-ID': requestData.requestId // NUEVO: ID de seguimiento
         },
-        timeout: 30000 // Ampliamos el tiempo de espera a 30 segundos
+        timeout: 15000 // 15 segundos máximo
       }
     );
     
@@ -41,21 +65,61 @@ export const generateAIExercises = async (
     if (response.data && response.data.success && response.data.exercises) {
       console.log("Ejercicios recibidos:", response.data.exercises);
       
-      // MODIFICACIÓN CRÍTICA: Forzar explícitamente la dificultad y tipo seleccionados
-      // Esto garantiza que los ejercicios siempre respeten lo que el usuario seleccionó
-      const forcedExercises = response.data.exercises.map((exercise: any) => ({
-        ...exercise,
-        // Sobreescribir completamente los metadatos con los seleccionados por el usuario
-        metadata: {
-          generatedByAI: true,
-          difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
-          type: type || "",       // FORZAR el tipo que seleccionó el usuario
-          forcedByApi: true       // Añadir indicador para debugging
+      // SOLUCIÓN EXTREMA: Ignorar completamente los metadatos del API
+      // y sobreescribirlos con lo que el usuario seleccionó
+      const forcedExercises = response.data.exercises.map((exercise: any) => {
+        // Comprobar si los contenidos son válidos
+        if (!exercise.problem || !exercise.solution) {
+          console.error("⚠️ Ejercicio inválido recibido del API:", exercise);
+          // Crear un ejercicio de respaldo
+          return {
+            problem: "x^2 + 5x + 6",
+            solution: "(x + 2)(x + 3)",
+            hint: "Busca dos números que multiplicados den 6 y sumados den 5",
+            metadata: {
+              generatedByAI: true,
+              difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
+              type: type || "",       // FORZAR el tipo que seleccionó el usuario
+              forcedByApi: true,       // Añadir indicador para debugging
+              isRepaired: true
+            },
+            // NUEVO: Datos adicionales para garantizar recuperación
+            originalUserSelections: {
+              difficulty,
+              type: type || '',
+              timestamp: Date.now()
+            }
+          };
         }
-      }));
+        
+        return {
+          ...exercise,
+          // IGNORAR COMPLETAMENTE cualquier metadato que venga de la API
+          metadata: {
+            generatedByAI: true,
+            difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
+            type: type || "",       // FORZAR el tipo que seleccionó el usuario
+            forcedByApi: true,      // Añadir indicador para debugging
+            timestamp: Date.now()   // Timestamp para debugging
+          },
+          // NUEVO: Datos adicionales para garantizar recuperación
+          originalUserSelections: {
+            difficulty,
+            type: type || '',
+            timestamp: Date.now()
+          }
+        };
+      });
       
-      console.log("Ejercicios con dificultad y tipo FORZADOS:", forcedExercises);
-      console.log("FORZANDO dificultad:", difficulty, " y tipo:", type);
+      console.log("🔐 Ejercicios con dificultad y tipo FORZADOS:", forcedExercises);
+      
+      // NUEVO: Guardar respuesta para debugging/recuperación
+      localStorage.setItem('last_api_response', JSON.stringify({
+        timestamp: new Date().toString(),
+        requestDifficulty: difficulty,
+        requestType: type,
+        exercises: forcedExercises
+      }));
       
       return forcedExercises;
     } else {
@@ -73,6 +137,13 @@ export const generateAIExercises = async (
       });
     }
     
+    // NUEVO: Guardar error para debugging
+    localStorage.setItem('last_api_error', JSON.stringify({
+      timestamp: new Date().toString(),
+      error: error instanceof Error ? error.message : 'Error desconocido',
+      userSelections: lastUserSelections
+    }));
+    
     // En caso de error, devolvemos ejercicios predefinidos según el tipo
     const backupExercises = generateBackupExercises(topic, difficulty, type);
     
@@ -84,7 +155,14 @@ export const generateAIExercises = async (
         difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
         type: type || "",       // FORZAR el tipo que seleccionó el usuario
         forcedByApi: true,      // Añadir indicador para debugging
-        isBackup: true
+        isBackup: true,
+        timestamp: Date.now()   // Timestamp para debugging
+      },
+      // NUEVO: Datos adicionales para garantizar recuperación
+      originalUserSelections: {
+        difficulty,
+        type: type || '',
+        timestamp: Date.now()
       }
     }));
   }

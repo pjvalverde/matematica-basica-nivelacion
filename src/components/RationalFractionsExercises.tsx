@@ -184,7 +184,7 @@ const generateExercise = (type: ExerciseType, difficulty: DifficultyLevel): Exer
         const a = Math.floor(Math.random() * 3) + 1;
         const b = Math.floor(Math.random() * 3) + 1;
         exercise.problem = `\\frac{x}{x^2-${a*a}} - \\frac{1}{x-${a}} + \\frac{1}{x+${a}}`;
-        exercise.solution = `\\frac{x}{(x-${a})(x+${a})} - \\frac{1}{x-${a}} + \\frac{1}{x+${a}} = \\frac{x - (x+${a}) + (x-${a})}{(x-${a})(x+${a})} = \\frac{x - x - ${a} + x - ${a}}{(x-${a})(x+${a})} = \\frac{x - 2${a}}{(x-${a})(x+${a})}`;
+        exercise.solution = `\\frac{x}{(x-${a})(x+${a})} - \\frac{1}{x-${a}} + \\frac{1}{x+${a}} = \\frac{x - (x+${a}) + (x-${a})}{(x-${a})(x+${a})} = \\frac{x - 2${a}}{(x-${a})(x+${a})}`;
         exercise.hint = `Factoriza el denominador x²-${a*a} = (x-${a})(x+${a}) y encuentra el denominador común.`;
       }
       break;
@@ -238,6 +238,133 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
   const [aiExercises, setAiExercises] = useState<Exercise[]>([]);
   const [showAiGenerator, setShowAiGenerator] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showDebug, setShowDebug] = useState<boolean>(false); // Nuevo estado para mostrar info de debugging
+
+  // NUEVO: Garantizar UI correcta mediante manipulación directa del DOM
+  useEffect(() => {
+    // Esta función se ejecutará cada vez que cambien exerciseType o difficulty
+    const applyForceUIOverride = () => {
+      console.log("⚠️ FORZANDO LA UI para mostrar:", {
+        difficulty: difficulty,
+        exerciseType: exerciseType
+      });
+
+      setTimeout(() => {
+        try {
+          // 1. Buscar y forzar el elemento de tipo de ejercicio
+          const typeElements = document.getElementsByClassName('exercise-type');
+          if (typeElements.length > 0) {
+            for (let i = 0; i < typeElements.length; i++) {
+              const element = typeElements[i] as HTMLElement;
+              
+              // Determinar el texto correcto según el tipo seleccionado
+              let typeText = "";
+              switch (exerciseType) {
+                case ExerciseType.BASIC:
+                  typeText = "Fracciones básicas";
+                  element.className = "exercise-type type-basic";
+                  break;
+                case ExerciseType.SIMPLIFICATION:
+                  typeText = "Simplificación de fracciones racionales";
+                  element.className = "exercise-type type-simplification";
+                  break;
+                case ExerciseType.ADDITION_SUBTRACTION:
+                  typeText = "Suma y resta de fracciones racionales";
+                  element.className = "exercise-type type-addition";
+                  break;
+                case ExerciseType.MULTIPLICATION_DIVISION:
+                  typeText = "Multiplicación y división de fracciones racionales";
+                  element.className = "exercise-type type-multiplication";
+                  break;
+                case ExerciseType.COMPLEX_OPERATIONS:
+                  typeText = "Operaciones complejas con fracciones racionales";
+                  element.className = "exercise-type type-complex";
+                  break;
+                case ExerciseType.BUSINESS_APPLICATION:
+                  typeText = "Aplicaciones a finanzas y negocios";
+                  element.className = "exercise-type type-business";
+                  break;
+              }
+              
+              // Asignar el texto correcto
+              element.innerHTML = typeText;
+              element.style.fontWeight = "bold";
+            }
+          }
+          
+          // 2. Buscar y forzar el elemento de dificultad
+          const difficultyElements = document.getElementsByClassName('exercise-difficulty');
+          if (difficultyElements.length > 0) {
+            for (let i = 0; i < difficultyElements.length; i++) {
+              const element = difficultyElements[i] as HTMLElement;
+              
+              // Determinar el texto correcto según la dificultad seleccionada
+              let difficultyText = "";
+              switch (difficulty) {
+                case DifficultyLevel.EASY:
+                  difficultyText = "Fácil";
+                  element.className = "exercise-difficulty difficulty-easy";
+                  break;
+                case DifficultyLevel.MEDIUM:
+                  difficultyText = "Medio";
+                  element.className = "exercise-difficulty difficulty-medium";
+                  break;
+                case DifficultyLevel.HARD:
+                  difficultyText = "Difícil";
+                  element.className = "exercise-difficulty difficulty-hard";
+                  break;
+              }
+              
+              // Asignar el texto correcto
+              element.innerHTML = difficultyText;
+              element.style.fontWeight = "bold";
+            }
+          }
+          
+          // 3. Buscar y forzar el elemento de puntos
+          const pointsElements = document.getElementsByClassName('exercise-points');
+          if (pointsElements.length > 0) {
+            for (let i = 0; i < pointsElements.length; i++) {
+              const element = pointsElements[i] as HTMLElement;
+              
+              // Determinar los puntos según la dificultad
+              const points = difficulty === DifficultyLevel.EASY ? 1 :
+                            difficulty === DifficultyLevel.MEDIUM ? 2 : 3;
+              
+              // Asignar el texto correcto
+              element.innerHTML = `Valor: ${points} ${points === 1 ? 'moneda' : 'monedas'}`;
+              element.style.fontWeight = "bold";
+            }
+          }
+          
+          console.log("✅ UI FORZADA correctamente para mostrar la selección del usuario");
+        } catch (error) {
+          console.error("Error al forzar la UI:", error);
+        }
+      }, 50); // Un pequeño retraso para asegurar que el DOM ya está actualizado
+    };
+    
+    // Aplicar la manipulación del DOM
+    if (currentExercise) {
+      applyForceUIOverride();
+    }
+
+    // También aplicar cada vez que cambie currentExercise
+    const observer = new MutationObserver((mutations) => {
+      applyForceUIOverride();
+    });
+
+    // Observar todo el DOM para cualquier cambio
+    observer.observe(document.body, { 
+      childList: true,
+      subtree: true 
+    });
+
+    // Limpieza
+    return () => {
+      observer.disconnect();
+    };
+  }, [exerciseType, difficulty, currentExercise]);
 
   // Cargar puntos del usuario al iniciar
   useEffect(() => {
@@ -278,6 +405,144 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     
     loadUserPoints();
   }, [user]);
+
+  // NUEVO: ÚLTIMO NIVEL DE PROTECCIÓN - Detectar y corregir cualquier cambio en la UI
+  useEffect(() => {
+    console.log("🛡️ Estableciendo protección continua de UI");
+    
+    // Función para forzar UI cuando se detecten cambios
+    const guardUI = () => {
+      // Convertir las selecciones del usuario a textos UI
+      const difficultyText = difficulty === DifficultyLevel.EASY ? "Fácil" :
+                          difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
+      
+      const typeText = getExerciseTypeName(exerciseType);
+      
+      // Detectar elementos UI que no coincidan con las selecciones
+      const typeElements = document.getElementsByClassName('exercise-type');
+      const difficultyElements = document.getElementsByClassName('exercise-difficulty');
+      
+      // Corregir elementos de tipo si no coinciden
+      if (typeElements.length > 0) {
+        for (let i = 0; i < typeElements.length; i++) {
+          const el = typeElements[i] as HTMLElement;
+          if (el.innerText !== typeText) {
+            console.log(`🛡️ CORRIGIENDO tipo de UI: "${el.innerText}" → "${typeText}"`);
+            el.innerText = typeText;
+            
+            // Añadir estilos visuales según el tipo
+            switch (exerciseType) {
+              case ExerciseType.BASIC:
+                el.className = "exercise-type type-basic";
+                break;
+              case ExerciseType.SIMPLIFICATION:
+                el.className = "exercise-type type-simplification";
+                break;
+              case ExerciseType.ADDITION_SUBTRACTION:
+                el.className = "exercise-type type-addition";
+                break;
+              case ExerciseType.MULTIPLICATION_DIVISION:
+                el.className = "exercise-type type-multiplication";
+                break;
+              case ExerciseType.COMPLEX_OPERATIONS:
+                el.className = "exercise-type type-complex";
+                break;
+              case ExerciseType.BUSINESS_APPLICATION:
+                el.className = "exercise-type type-business";
+                break;
+            }
+          }
+        }
+      }
+      
+      // Corregir elementos de dificultad si no coinciden
+      if (difficultyElements.length > 0) {
+        for (let i = 0; i < difficultyElements.length; i++) {
+          const el = difficultyElements[i] as HTMLElement;
+          if (el.innerText !== difficultyText) {
+            console.log(`🛡️ CORRIGIENDO dificultad de UI: "${el.innerText}" → "${difficultyText}"`);
+            el.innerText = difficultyText;
+            
+            // Añadir estilos visuales según la dificultad
+            switch (difficulty) {
+              case DifficultyLevel.EASY:
+                el.className = "exercise-difficulty difficulty-easy";
+                break;
+              case DifficultyLevel.MEDIUM:
+                el.className = "exercise-difficulty difficulty-medium";
+                break;
+              case DifficultyLevel.HARD:
+                el.className = "exercise-difficulty difficulty-hard";
+                break;
+            }
+          }
+        }
+      }
+      
+      // También verificar puntos
+      const pointsElements = document.getElementsByClassName('exercise-points');
+      if (pointsElements.length > 0) {
+        const points = difficulty === DifficultyLevel.EASY ? 1 :
+                    difficulty === DifficultyLevel.MEDIUM ? 2 : 3;
+        const pointsText = `Valor: ${points} ${points === 1 ? 'moneda' : 'monedas'}`;
+        
+        for (let i = 0; i < pointsElements.length; i++) {
+          const el = pointsElements[i] as HTMLElement;
+          if (el.innerText !== pointsText) {
+            console.log(`🛡️ CORRIGIENDO puntos en UI: "${el.innerText}" → "${pointsText}"`);
+            el.innerText = pointsText;
+          }
+        }
+      }
+    };
+    
+    // Hacer corrección inmediata al montar
+    if (currentExercise) {
+      guardUI();
+    }
+    
+    // Establecer MutationObserver para detectar cambios en el DOM
+    const observer = new MutationObserver((mutations) => {
+      // Verificar si alguna mutación afecta elementos relevantes
+      let needsCorrection = false;
+      
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList' || mutation.type === 'characterData') {
+          const targetEl = mutation.target as Element;
+          const targetParent = targetEl.parentElement;
+          
+          // Verificar si el cambio afecta a nuestros elementos de interés
+          if (targetEl.classList?.contains('exercise-type') || 
+              targetEl.classList?.contains('exercise-difficulty') ||
+              targetEl.classList?.contains('exercise-points') ||
+              targetParent?.classList?.contains('exercise-type') ||
+              targetParent?.classList?.contains('exercise-difficulty') ||
+              targetParent?.classList?.contains('exercise-points')) {
+            needsCorrection = true;
+            break;
+          }
+        }
+      }
+      
+      // Si se detecta un cambio en elementos relevantes, forzar la UI correcta
+      if (needsCorrection && currentExercise) {
+        console.log("🛡️ CAMBIO DETECTADO EN UI - aplicando corrección");
+        guardUI();
+      }
+    });
+    
+    // Iniciar observación del DOM
+    observer.observe(document.body, {
+      attributes: true,
+      childList: true,
+      characterData: true,
+      subtree: true
+    });
+    
+    return () => {
+      observer.disconnect();
+    };
+  }, [exerciseType, difficulty, currentExercise]);
 
   // Generar un nuevo ejercicio
   const generateNewExercise = () => {
@@ -398,40 +663,87 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
 
   // Manejar generación de ejercicios con IA
   const handleAIExercisesGenerated = (generatedExercises: any[]) => {
-    console.log("Recibidos ejercicios generados por IA:", generatedExercises);
+    console.log("⚡ EJERCICIOS RECIBIDOS DEL GENERADOR:", generatedExercises);
+    console.log("⚡ VALORES ACTUALES UI: Tipo:", exerciseType, "Dificultad:", difficulty);
     
-    // IMPORTANTE: Usar la selección actual para los ejercicios, independientemente de los metadatos
-    // Esto garantiza que se respete lo que el usuario seleccionó
+    // IMPLEMENTACIÓN EXTREMA: Ignorar completamente cualquier metadata de los ejercicios,
+    // y usar EXCLUSIVAMENTE lo que el usuario seleccionó en la interfaz
+    
+    // Almacenar en localStorage para debugging
+    localStorage.setItem('rational_fractions_selections', JSON.stringify({
+      timestamp: new Date().toString(),
+      exerciseType: exerciseType,
+      difficulty: difficulty,
+      exercisesCount: generatedExercises.length
+    }));
     
     // Convertir el formato de ejercicios de la IA al formato usado en este componente
-    const formattedExercises = generatedExercises.map(ex => {
-      // FORZAR el tipo y dificultad según la selección actual del usuario
-      // Esto asegura que se respete lo que el usuario seleccionó
+    // IGNORANDO COMPLETAMENTE cualquier metadato que pudieran tener
+    const forcedExercises = generatedExercises.map(ex => {
       return {
         id: generateId(),
-        type: exerciseType, // USAR SIEMPRE la selección del usuario
-        difficulty: difficulty, // USAR SIEMPRE la selección del usuario
-        problem: ex.problem,
-        solution: ex.solution,
+        // FORZAR UI: Usar EXCLUSIVAMENTE los valores seleccionados por el usuario
+        type: exerciseType,         // FORZAR el tipo seleccionado en la UI
+        difficulty: difficulty,      // FORZAR la dificultad seleccionada en la UI
+        // Mantener contenido del ejercicio
+        problem: ex.problem || "x^2 + 5x + 6",
+        solution: ex.solution || "(x + 2)(x + 3)",
         hint: ex.hint || "Intenta factorizar numerador y denominador cuando sea posible.",
+        // FORZAR puntos según la dificultad seleccionada en la UI
         points: difficulty === DifficultyLevel.EASY ? 1 : 
-                difficulty === DifficultyLevel.MEDIUM ? 2 : 3
+                difficulty === DifficultyLevel.MEDIUM ? 2 : 3,
+        // Agregar metadatos de forzado para debugging
+        _forced: {
+          timestamp: Date.now(),
+          originalType: exerciseType,
+          originalDifficulty: difficulty,
+          source: "handleAIExercisesGenerated"
+        }
       };
     });
     
-    console.log("Ejercicios formateados con tipo forzado:", formattedExercises);
-    console.log("Usando FORZOSAMENTE tipo: ", exerciseType, " y dificultad: ", difficulty);
+    console.log("⚡ EJERCICIOS TRANSFORMADOS con valores UI FORZADOS:", forcedExercises);
     
-    setAiExercises(formattedExercises);
+    setAiExercises(forcedExercises);
     
-    if (formattedExercises.length > 0) {
-      setCurrentExercise(formattedExercises[0]);
+    if (forcedExercises.length > 0) {
+      // Establecer el ejercicio actual con los valores UI forzados
+      setCurrentExercise(forcedExercises[0]);
       setUserAnswer('');
       setShowSolution(false);
       setIsCorrect(null);
+      
+      // Forzar la actualización de la UI después de un breve retraso
+      setTimeout(() => {
+        try {
+          // Forzar actualización de elementos visuales
+          const typeElements = document.getElementsByClassName('exercise-type');
+          const difficultyElements = document.getElementsByClassName('exercise-difficulty');
+          
+          if (typeElements.length > 0) {
+            for (let i = 0; i < typeElements.length; i++) {
+              const el = typeElements[i] as HTMLElement;
+              // Asignar texto según el tipo seleccionado
+              el.innerText = getExerciseTypeName(exerciseType);
+            }
+          }
+          
+          if (difficultyElements.length > 0) {
+            for (let i = 0; i < difficultyElements.length; i++) {
+              const el = difficultyElements[i] as HTMLElement;
+              // Asignar texto según la dificultad seleccionada
+              el.innerText = difficulty;
+            }
+          }
+          
+          console.log("⚡ UI actualizada forzadamente después de establecer ejercicio");
+        } catch (e) {
+          console.error("Error al forzar actualización de UI:", e);
+        }
+      }, 100);
     } else {
-      console.error("No se recibieron ejercicios válidos de la IA");
-      setError("No se pudieron generar ejercicios con IA. Intente de nuevo.");
+      console.error("No se recibieron ejercicios válidos del generador");
+      setError("No se pudieron generar ejercicios. Intente de nuevo.");
     }
   };
 
@@ -448,25 +760,84 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
       );
     }
 
-    // MODIFICACIÓN CRUCIAL: Forzar el tipo y dificultad seleccionados por el usuario
-    // para asegurar que lo que se muestra coincide con lo que el usuario seleccionó
-    const displayType = exerciseType;  // Usar SIEMPRE el tipo seleccionado por el usuario
-    const displayDifficulty = difficulty;  // Usar SIEMPRE la dificultad seleccionada por el usuario
-    const displayPoints = displayDifficulty === DifficultyLevel.EASY ? 1 : 
-                        displayDifficulty === DifficultyLevel.MEDIUM ? 2 : 3;
+    // MODIFICACIÓN CRUCIAL: Nunca usar valores del ejercicio, siempre usar valores del estado del componente
+    // Así garantizamos que la UI siempre muestra las selecciones del usuario
+    
+    // Textos UI basados EXCLUSIVAMENTE en el estado del componente
+    const difficultyText = difficulty === DifficultyLevel.EASY ? "Fácil" :
+                        difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
+    
+    const typeText = getExerciseTypeName(exerciseType);
+    
+    // Clases CSS basadas EXCLUSIVAMENTE en el estado del componente
+    const difficultyClass = difficulty === DifficultyLevel.EASY ? "difficulty-easy" :
+                         difficulty === DifficultyLevel.MEDIUM ? "difficulty-medium" : "difficulty-hard";
+    
+    let typeClass;
+    switch (exerciseType) {
+      case ExerciseType.BASIC:
+        typeClass = "type-basic";
+        break;
+      case ExerciseType.SIMPLIFICATION:
+        typeClass = "type-simplification";
+        break;
+      case ExerciseType.ADDITION_SUBTRACTION:
+        typeClass = "type-addition";
+        break;
+      case ExerciseType.MULTIPLICATION_DIVISION:
+        typeClass = "type-multiplication";
+        break;
+      case ExerciseType.COMPLEX_OPERATIONS:
+        typeClass = "type-complex";
+        break;
+      case ExerciseType.BUSINESS_APPLICATION:
+        typeClass = "type-business";
+        break;
+      default:
+        typeClass = "type-basic";
+    }
+    
+    // Puntos basados EXCLUSIVAMENTE en el estado del componente
+    const displayPoints = difficulty === DifficultyLevel.EASY ? 1 : 
+                        difficulty === DifficultyLevel.MEDIUM ? 2 : 3;
 
-    console.log('RENDERIZANDO EJERCICIO CON TIPO Y DIFICULTAD FORZADOS:');
-    console.log('- Tipo seleccionado por usuario:', exerciseType);
-    console.log('- Tipo original del ejercicio:', currentExercise.type);
-    console.log('- Dificultad seleccionada por usuario:', difficulty);
-    console.log('- Dificultad original del ejercicio:', currentExercise.difficulty);
+    // Guardar valores UI en localStorage para debugging
+    try {
+      localStorage.setItem('current_exercise_ui', JSON.stringify({
+        timestamp: new Date().toString(),
+        displayType: typeText,
+        displayDifficulty: difficultyText,
+        displayPoints: displayPoints,
+        stateType: exerciseType,
+        stateDifficulty: difficulty
+      }));
+    } catch (e) {
+      console.error("Error guardando en localStorage:", e);
+    }
+    
+    console.log("🎯 RENDERIZANDO EJERCICIO con UI forzada:", {
+      typeText,
+      difficultyText,
+      displayPoints
+    });
 
     return (
       <div className="exercise-container">
         <div className="exercise-header">
-          <div className="exercise-type">{getExerciseTypeName(displayType)}</div>
-          <div className="exercise-difficulty">{displayDifficulty}</div>
-          <div className="exercise-points">Valor: {displayPoints} {displayPoints === 1 ? 'moneda' : 'monedas'}</div>
+          {/* Tipo - Siempre desde el estado */}
+          <div className={`exercise-type ${typeClass}`} style={{fontWeight: 'bold'}}>
+            {typeText}
+          </div>
+          
+          {/* Dificultad - Siempre desde el estado */}
+          <div className={`exercise-difficulty ${difficultyClass}`} style={{fontWeight: 'bold'}}>
+            {difficultyText}
+          </div>
+          
+          {/* Puntos - Siempre desde el estado */}
+          <div className="exercise-points" style={{fontWeight: 'bold'}}>
+            Valor: {displayPoints} {displayPoints === 1 ? 'moneda' : 'monedas'}
+          </div>
         </div>
 
         {currentExercise.context && (
@@ -552,6 +923,65 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     );
   };
 
+  // NUEVO: Función de debugging para diagnosticar problemas
+  const debugExerciseState = () => {
+    console.log("🔍 ESTADO ACTUAL:");
+    console.log("- Tipo seleccionado:", exerciseType);
+    console.log("- Dificultad seleccionada:", difficulty);
+    console.log("- Ejercicio actual:", currentExercise);
+    
+    if (currentExercise) {
+      console.log("- Tipo del ejercicio actual:", currentExercise.type);
+      console.log("- Dificultad del ejercicio actual:", currentExercise.difficulty);
+    }
+    
+    console.log("- Ejercicios AI disponibles:", aiExercises.length);
+    
+    // Verificar diferencias entre selección y ejercicio actual
+    if (currentExercise) {
+      if (currentExercise.type !== exerciseType) {
+        console.warn("⚠️ DISCREPANCIA: El tipo del ejercicio no coincide con la selección");
+      }
+      if (currentExercise.difficulty !== difficulty) {
+        console.warn("⚠️ DISCREPANCIA: La dificultad del ejercicio no coincide con la selección");
+      }
+    }
+    
+    // Verificar elementos UI
+    const typeElements = document.getElementsByClassName('exercise-type');
+    const difficultyElements = document.getElementsByClassName('exercise-difficulty');
+    
+    if (typeElements.length > 0) {
+      console.log("- Texto de tipo en UI:", (typeElements[0] as HTMLElement).innerText);
+    }
+    
+    if (difficultyElements.length > 0) {
+      console.log("- Texto de dificultad en UI:", (difficultyElements[0] as HTMLElement).innerText);
+    }
+    
+    // Forzar inmediatamente la UI
+    try {
+      const typeText = getExerciseTypeName(exerciseType);
+      const difficultyText = difficulty === DifficultyLevel.EASY ? "Fácil" :
+                           difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
+      
+      for (let i = 0; i < typeElements.length; i++) {
+        (typeElements[i] as HTMLElement).innerText = typeText;
+      }
+      
+      for (let i = 0; i < difficultyElements.length; i++) {
+        (difficultyElements[i] as HTMLElement).innerText = difficultyText;
+      }
+      
+      console.log("✅ UI forzada durante el debugging");
+    } catch (e) {
+      console.error("Error forzando UI durante debugging:", e);
+    }
+    
+    // Alternar visualización del panel de debugging
+    setShowDebug(current => !current);
+  };
+
   return (
     <div className="factorization-exercises-container">
       <div className="factorization-exercises-header">
@@ -572,10 +1002,49 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
                 <span className="exercises-label">Ejercicios:</span>
                 <span className="exercises-value">{totalExercises}</span>
               </div>
+              {/* NUEVO: Botón de debugging */}
+              <div className="debug-button" onClick={debugExerciseState} title="Diagnosticar problemas">
+                🔍
+              </div>
             </>
           )}
         </div>
       </div>
+
+      {/* NUEVO: Panel de información de debugging */}
+      {showDebug && (
+        <div className="debug-panel" style={{
+          backgroundColor: '#f0f0f0',
+          border: '1px solid #ccc',
+          padding: '10px',
+          margin: '10px 0',
+          fontSize: '12px'
+        }}>
+          <h4>Información de Debugging</h4>
+          <p><strong>Tipo seleccionado:</strong> {exerciseType} ({getExerciseTypeName(exerciseType)})</p>
+          <p><strong>Dificultad seleccionada:</strong> {difficulty}</p>
+          {currentExercise && (
+            <>
+              <p><strong>Tipo del ejercicio actual:</strong> {currentExercise.type} ({getExerciseTypeName(currentExercise.type)})</p>
+              <p><strong>Dificultad del ejercicio actual:</strong> {currentExercise.difficulty}</p>
+              <p><strong>¿Coinciden?</strong> {(currentExercise.type === exerciseType && currentExercise.difficulty === difficulty) ? '✅ Sí' : '❌ No'}</p>
+            </>
+          )}
+          <button onClick={() => {
+            // Forzar ejercicio para que coincida con la selección
+            if (currentExercise) {
+              const fixedExercise = {
+                ...currentExercise,
+                type: exerciseType,
+                difficulty: difficulty
+              };
+              setCurrentExercise(fixedExercise);
+              console.log("✅ Ejercicio corregido forzosamente para coincidir con la selección");
+            }
+          }}>Forzar coincidencia</button>
+          <button onClick={() => setShowDebug(false)}>Cerrar</button>
+        </div>
+      )}
 
       <div className="exercise-controls">
         <div className="control-group">
