@@ -692,23 +692,26 @@ const getGuaranteedExercise = (topic: 'factorization' | 'rationalfractions', dif
 const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExercisesGenerated }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
-  const [exerciseType, setExerciseType] = useState<string>('');
-  const [useAI, setUseAI] = useState<boolean>(true); // Por defecto, activamos la IA
-  
-  // NUEVO: Flag que indica que la UI debe ser forzada
-  const [forceUI, setForceUI] = useState<boolean>(true);
+
+  // Define difficultyOptions primero para que esté disponible
+  const difficultyOptions = [
+    { value: 'easy', label: 'Fácil' },
+    { value: 'medium', label: 'Medio' },
+    { value: 'hard', label: 'Difícil' }
+  ];
 
   // Opciones de tipo según el tema
   const typeOptions = topic === 'factorization' 
     ? [
-        { value: '', label: 'Cualquier tipo' },
+        { value: '', label: 'Cualquier tipo' }, // Mantener para permitir "cualquiera"
         { value: 'factor común', label: 'Factor común' },
         { value: 'diferencia de cuadrados', label: 'Diferencia de cuadrados' },
         { value: 'trinomio cuadrado perfecto', label: 'Trinomio cuadrado perfecto' },
         { value: 'trinomio de la forma ax²+bx+c', label: 'Trinomio general' }
       ]
-    : [
+    : [ // rationalfractions
+        // Quitar la opción "Cualquier tipo" si queremos forzar una selección inicial específica
+        // o asegurar que la primera opción sea la que se tome si exerciseType es ''
         { value: 'basic', label: 'Fracciones básicas' },
         { value: 'simplification', label: 'Simplificación de fracciones' },
         { value: 'addition_subtraction', label: 'Suma y resta' },
@@ -716,14 +719,24 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
         { value: 'complex_operations', label: 'Operaciones complejas' }
       ];
 
-  // Define dificultad exactamente como aparece en la UI
-  const difficultyOptions = [
-    { value: 'easy', label: 'Fácil' },
-    { value: 'medium', label: 'Medio' },
-    { value: 'hard', label: 'Difícil' }
-  ];
+  const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
+  // Inicializar exerciseType con el valor de la primera opción real de typeOptions,
+  // o mantener '' si se desea que "Cualquier tipo" (si existe) sea el default.
+  // Para el caso de rationalfractions, la primera opción es 'basic'.
+  const [exerciseType, setExerciseType] = useState<string>(topic === 'rationalfractions' ? typeOptions[0].value : '');
+  
+  const [useAI, setUseAI] = useState<boolean>(true); // Por defecto, activamos la IA
+  
+  // NUEVO: Flag que indica que la UI debe ser forzada
+  const [forceUI, setForceUI] = useState<boolean>(true);
 
   const generateExercises = async () => {
+    // ---- START DIAGNOSTIC LOG ----
+    console.log("[AIExerciseGenerator] ENTERING generateExercises");
+    console.log("[AIExerciseGenerator] Current 'difficulty' state:", difficulty);
+    console.log("[AIExerciseGenerator] Current 'exerciseType' state:", exerciseType);
+    // ---- END DIAGNOSTIC LOG ----
+
     setIsLoading(true);
     setError(null);
     
