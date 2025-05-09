@@ -328,6 +328,7 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
   const [error, setError] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy');
   const [exerciseType, setExerciseType] = useState<string>('');
+  const [useAI, setUseAI] = useState<boolean>(true); // Estado para controlar si usar IA o ejercicios locales
 
   // Opciones de tipo según el tema
   const typeOptions = topic === 'factorization' 
@@ -351,30 +352,32 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
     setError(null);
     
     try {
-      // SOLUCIÓN TEMPORAL: Usar siempre ejemplos locales predefinidos sin llamar a la API
-      const localExercises = getLocalExercises(topic, difficulty, exerciseType);
-      
-      setTimeout(() => {
-        onExercisesGenerated(localExercises);
-        setIsLoading(false);
-      }, 500); // Pequeña demora para simular procesamiento
-      
-      /* Comentado temporalmente: llamada a la API
-      const exercises = await generateAIExercises(
-        topic, 
-        difficulty,
-        exerciseType
-      );
-      
-      if (exercises && Array.isArray(exercises)) {
-        onExercisesGenerated(exercises);
+      if (useAI) {
+        // Usar la API de DeepSeek a través de Firebase Functions
+        const exercises = await generateAIExercises(
+          topic, 
+          difficulty,
+          exerciseType
+        );
+        
+        if (exercises && Array.isArray(exercises)) {
+          onExercisesGenerated(exercises);
+        } else {
+          setError('No se pudieron generar ejercicios. Usando ejercicios predefinidos.');
+          const localExercises = getLocalExercises(topic, difficulty, exerciseType);
+          onExercisesGenerated(localExercises);
+        }
       } else {
-        setError('No se pudieron generar ejercicios. Inténtalo de nuevo.');
+        // Usar ejemplos locales predefinidos sin llamar a la API
+        const localExercises = getLocalExercises(topic, difficulty, exerciseType);
+        
+        setTimeout(() => {
+          onExercisesGenerated(localExercises);
+        }, 300); // Pequeña demora para simular procesamiento
       }
-      */
     } catch (error) {
       console.error('Error al generar ejercicios:', error);
-      setError('Ha ocurrido un error al comunicarse con la IA. Por favor, inténtalo más tarde.');
+      setError('Ha ocurrido un error. Mostrando ejercicios predefinidos.');
       
       // En caso de error, usar ejercicios predefinidos
       const localExercises = getLocalExercises(topic, difficulty, exerciseType);
@@ -420,12 +423,23 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
           </select>
         </div>
         
+        <div className="control-group checkbox-control">
+          <label>
+            <input 
+              type="checkbox" 
+              checked={useAI}
+              onChange={(e) => setUseAI(e.target.checked)}
+            />
+            Usar IA para generar (Plan Blaze)
+          </label>
+        </div>
+        
         <button 
           className="generate-button"
           onClick={generateExercises}
           disabled={isLoading}
         >
-          {isLoading ? 'Generando...' : 'Generar con IA'}
+          {isLoading ? 'Generando...' : useAI ? 'Generar con IA' : 'Generar ejercicios'}
         </button>
       </div>
       
