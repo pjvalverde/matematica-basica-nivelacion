@@ -33,6 +33,8 @@ interface Exercise {
   context?: string;
   hint?: string;
   points: number;
+  displayType?: string;
+  displayDifficulty?: string;
 }
 
 // Interfaz para usuario
@@ -704,7 +706,7 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     console.log("⚡ VALORES ACTUALES UI: Tipo:", exerciseType, "Dificultad:", difficulty);
     
     // IMPLEMENTACIÓN EXTREMA: Ignorar completamente cualquier metadata de los ejercicios,
-    // y usar EXCLUSIVAMENTE lo que el usuario seleccionó en la interfaz
+    // y usar EXCLUSIVAMENTE lo que el usuario seleccionó en la interfaz, pero mantener los valores de display
     
     // Almacenar en localStorage para debugging
     localStorage.setItem('rational_fractions_selections', JSON.stringify({
@@ -715,7 +717,7 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     }));
     
     // Convertir el formato de ejercicios de la IA al formato usado en este componente
-    // IGNORANDO COMPLETAMENTE cualquier metadato que pudieran tener
+    // Mantener displayType y displayDifficulty si existen
     const forcedExercises = generatedExercises.map(ex => {
       // NUEVO: Si el ejercicio tiene typeOverride o difficultyOverride, usarlos primero
       const selectedType = ex.typeOverride 
@@ -726,11 +728,17 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
         ? mapStringDifficultyToEnum(ex.difficultyOverride) 
         : difficulty;
       
+      // NUEVO: Preservar los valores de display de la UI si existen
+      const preservedDisplayType = ex.displayType || null;
+      const preservedDisplayDifficulty = ex.displayDifficulty || null;
+      
       console.log("⚡ MAPEANDO VALORES:", {
         typeOverride: ex.typeOverride,
         difficultyOverride: ex.difficultyOverride,
         resultingType: selectedType,
-        resultingDifficulty: selectedDifficulty
+        resultingDifficulty: selectedDifficulty,
+        displayType: preservedDisplayType,
+        displayDifficulty: preservedDisplayDifficulty
       });
       
       return {
@@ -742,6 +750,9 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
         problem: ex.problem || "x^2 + 5x + 6",
         solution: ex.solution || "(x + 2)(x + 3)",
         hint: ex.hint || "Intenta factorizar numerador y denominador cuando sea posible.",
+        // Preservar los valores de display
+        displayType: preservedDisplayType,
+        displayDifficulty: preservedDisplayDifficulty,
         // FORZAR puntos según la dificultad seleccionada en la UI
         points: selectedDifficulty === DifficultyLevel.EASY ? 1 : 
                 selectedDifficulty === DifficultyLevel.MEDIUM ? 2 : 3,
@@ -813,14 +824,15 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
       );
     }
 
-    // MODIFICACIÓN CRUCIAL: Nunca usar valores del ejercicio, siempre usar valores del estado del componente
-    // Así garantizamos que la UI siempre muestra las selecciones del usuario
+    // NUEVO: Usar displayType y displayDifficulty directamente del ejercicio si existen
+    const displayType = (currentExercise as any).displayType 
+      ? (currentExercise as any).displayType 
+      : getExerciseTypeName(exerciseType);
     
-    // Textos UI basados EXCLUSIVAMENTE en el estado del componente
-    const difficultyText = difficulty === DifficultyLevel.EASY ? "Fácil" :
-                        difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
-    
-    const typeText = getExerciseTypeName(exerciseType);
+    const displayDifficulty = (currentExercise as any).displayDifficulty 
+      ? (currentExercise as any).displayDifficulty
+      : difficulty === DifficultyLevel.EASY ? "Fácil" :
+        difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
     
     // Clases CSS basadas EXCLUSIVAMENTE en el estado del componente
     const difficultyClass = difficulty === DifficultyLevel.EASY ? "difficulty-easy" :
@@ -858,33 +870,38 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     try {
       localStorage.setItem('current_exercise_ui', JSON.stringify({
         timestamp: new Date().toString(),
-        displayType: typeText,
-        displayDifficulty: difficultyText,
+        displayType: displayType,
+        displayDifficulty: displayDifficulty,
         displayPoints: displayPoints,
         stateType: exerciseType,
-        stateDifficulty: difficulty
+        stateDifficulty: difficulty,
+        currentExerciseType: currentExercise.type,
+        currentExerciseDifficulty: currentExercise.difficulty,
+        hasDisplayProperties: !!(currentExercise as any).displayType
       }));
     } catch (e) {
       console.error("Error guardando en localStorage:", e);
     }
     
     console.log("🎯 RENDERIZANDO EJERCICIO con UI forzada:", {
-      typeText,
-      difficultyText,
-      displayPoints
+      displayType,
+      displayDifficulty,
+      displayPoints,
+      originalType: currentExercise.type,
+      originalDifficulty: currentExercise.difficulty
     });
 
     return (
       <div className="exercise-container">
         <div className="exercise-header">
-          {/* Tipo - Siempre desde el estado */}
+          {/* Tipo - Usar displayType si existe */}
           <div className={`exercise-type ${typeClass}`} style={{fontWeight: 'bold'}}>
-            {typeText}
+            {displayType}
           </div>
           
-          {/* Dificultad - Siempre desde el estado */}
+          {/* Dificultad - Usar displayDifficulty si existe */}
           <div className={`exercise-difficulty ${difficultyClass}`} style={{fontWeight: 'bold'}}>
-            {difficultyText}
+            {displayDifficulty}
           </div>
           
           {/* Puntos - Siempre desde el estado */}
