@@ -4,6 +4,7 @@ import './FactorizationExercises.css'; // Reusing the same CSS
 import { addCoinsToUser, getUserProfile } from '../firebase/userService';
 import { db } from '../firebase/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import AIExerciseGenerator from './AIExerciseGenerator';
 
 // Tipos de ejercicios
 enum ExerciseType {
@@ -234,6 +235,8 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
   const [showLatexGuide, setShowLatexGuide] = useState(false);
   const [userPoints, setUserPoints] = useState<number>(0);
   const [totalExercises, setTotalExercises] = useState<number>(0);
+  const [aiExercises, setAiExercises] = useState<Exercise[]>([]);
+  const [showAiGenerator, setShowAiGenerator] = useState(false);
 
   // Cargar puntos del usuario al iniciar
   useEffect(() => {
@@ -357,17 +360,17 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
       <h4>Guía para escribir fórmulas matemáticas</h4>
       <ul>
         <li>Exponentes: <code>x^2</code> para x²</li>
-        <li>Fracciones: <code>\frac{numerador}{denominador}</code> o <code>(numerador)/(denominador)</code></li>
-        <li>Raíz cuadrada: <code>\sqrt{x}</code> para √x</li>
+        <li>Fracciones: <code>\\frac&#123;numerador&#125;&#123;denominador&#125;</code> o <code>(numerador)/(denominador)</code></li>
+        <li>Raíz cuadrada: <code>\\sqrt&#123;x&#125;</code> para √x</li>
         <li>Productos: <code>2x</code> o <code>2*x</code> para 2x</li>
         <li>Exponentes negativos: <code>x^(-1)</code> para x⁻¹</li>
         <li>Paréntesis: Use <code>(</code> y <code>)</code> para agrupar expresiones</li>
       </ul>
       <p>Ejemplos:</p>
       <ul>
-        <li><code>\frac{x+1}{x-2}</code> produce <InlineMath math="\frac{x+1}{x-2}" /></li>
-        <li><code>x^2 + 2x + 1</code> produce <InlineMath math="x^2 + 2x + 1" /></li>
-        <li><code>\frac{3x}{4} + \frac{x}{2}</code> produce <InlineMath math="\frac{3x}{4} + \frac{x}{2}" /></li>
+        <li><code>\\frac&#123;x+1&#125;&#123;x-2&#125;</code> - Fracción con x+1 en el numerador y x-2 en el denominador</li>
+        <li><code>x^2 + 2x + 1</code> - Polinomio cuadrático</li>
+        <li><code>\\frac&#123;3x&#125;&#123;4&#125; + \\frac&#123;x&#125;&#123;2&#125;</code> - Suma de fracciones</li>
       </ul>
     </div>
   );
@@ -390,6 +393,27 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
       default:
         return 'Desconocido';
     }
+  };
+
+  // Manejar generación de ejercicios con IA
+  const handleAIExercisesGenerated = (generatedExercises: any[]) => {
+    // Convertir el formato de ejercicios de la IA al formato usado en este componente
+    const formattedExercises = generatedExercises.map(ex => ({
+      id: generateId(),
+      type: exerciseType, // Usamos el tipo seleccionado actualmente
+      difficulty,
+      problem: ex.problem,
+      solution: ex.solution,
+      hint: ex.hint,
+      points: difficulty === DifficultyLevel.EASY ? 1 : 
+              difficulty === DifficultyLevel.MEDIUM ? 2 : 3
+    }));
+    
+    setAiExercises(formattedExercises);
+    setCurrentExercise(formattedExercises[0]);
+    setUserAnswer('');
+    setShowSolution(false);
+    setIsCorrect(null);
   };
 
   // Renderizar ejercicio actual
@@ -420,7 +444,7 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
         <div className="exercise-problem">
           <h3>Resuelve la siguiente expresión:</h3>
           <div className="problem-display">
-            <BlockMath math={currentExercise.problem} />
+            <BlockMath math={currentExercise ? currentExercise.problem : ""} />
           </div>
         </div>
 
@@ -439,7 +463,7 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
         {showSolution && (
           <div className="solution-display">
             <h4>Solución:</h4>
-            <BlockMath math={currentExercise.solution} />
+            <BlockMath math={currentExercise ? currentExercise.solution : ""} />
           </div>
         )}
 
@@ -554,6 +578,13 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
         <button className="generate-button" onClick={generateNewExercise}>
           Generar ejercicio
         </button>
+        
+        <button 
+          className="ai-toggle-button" 
+          onClick={() => setShowAiGenerator(!showAiGenerator)}
+        >
+          {showAiGenerator ? 'Ocultar generador IA' : 'Mostrar generador IA'}
+        </button>
       </div>
 
       <div className="introduction-section">
@@ -575,6 +606,13 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
           Al escribir tus respuestas, usa la notación LaTeX. Puedes presionar el botón "?" para ver la guía completa.
         </p>
       </div>
+
+      {showAiGenerator && (
+        <AIExerciseGenerator 
+          topic="rationalfractions"
+          onExercisesGenerated={handleAIExercisesGenerated}
+        />
+      )}
 
       {renderCurrentExercise()}
     </div>

@@ -343,4 +343,42 @@ button:disabled {
   .check-button, .solution-button, .next-button {
     width: 100%;
   }
+}
+
+/* Estilos para el componente de generación de ejercicios con IA */
+.ai-exercise-generator {
+  background-color: #f5f9ff;
+  border: 1px solid #cfd8dc;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.ai-exercise-generator h3 {
+  color: #1565c0;
+  margin-top: 0;
+  font-size: 1.3rem;
+}
+
+.ai-toggle-button {
+  background-color: #7e57c2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-left: 10px;
+}
+
+.ai-toggle-button:hover {
+  background-color: #673ab7;
+}
+
+/* Estilo para cuando hay ejercicios IA activos */
+.ai-exercises-active {
+  border-left: 4px solid #7e57c2;
+  padding-left: 10px;
 } 

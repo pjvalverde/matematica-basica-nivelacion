@@ -4,6 +4,7 @@ import './FactorizationExercises.css';
 import { addCoinsToUser, getUserProfile } from '../firebase/userService';
 import { db } from '../firebase/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import AIExerciseGenerator from './AIExerciseGenerator';
 
 // Tipos de ejercicios
 enum ExerciseType {
@@ -283,6 +284,8 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
   const [showLatexGuide, setShowLatexGuide] = useState(false);
   const [userPoints, setUserPoints] = useState<number>(0);
   const [totalExercises, setTotalExercises] = useState<number>(0);
+  const [aiExercises, setAiExercises] = useState<Exercise[]>([]);
+  const [showAiGenerator, setShowAiGenerator] = useState(false);
 
   // Cargar puntos del usuario al iniciar
   useEffect(() => {
@@ -420,6 +423,27 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
       </ul>
     </div>
   );
+
+  // Manejar generación de ejercicios con IA
+  const handleAIExercisesGenerated = (generatedExercises: any[]) => {
+    // Convertir el formato de ejercicios de la IA al formato usado en este componente
+    const formattedExercises = generatedExercises.map(ex => ({
+      id: generateId(),
+      type: ExerciseType.PDF_BASED, // Usamos este tipo para ejercicios generados por IA
+      difficulty,
+      problem: ex.problem,
+      solution: ex.solution,
+      hint: ex.hint,
+      points: difficulty === DifficultyLevel.EASY ? 1 : 
+              difficulty === DifficultyLevel.MEDIUM ? 2 : 3
+    }));
+    
+    setAiExercises(formattedExercises);
+    setCurrentExercise(formattedExercises[0]);
+    setUserAnswer('');
+    setShowSolution(false);
+    setIsCorrect(null);
+  };
 
   // Renderizar ejercicio actual
   const renderCurrentExercise = () => {
@@ -600,6 +624,22 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
           Generar ejercicio
         </button>
       </div>
+
+      <div className="exercise-controls">
+        <button 
+          className="ai-toggle-button" 
+          onClick={() => setShowAiGenerator(!showAiGenerator)}
+        >
+          {showAiGenerator ? 'Ocultar generador IA' : 'Mostrar generador IA'}
+        </button>
+      </div>
+      
+      {showAiGenerator && (
+        <AIExerciseGenerator 
+          topic="factorization"
+          onExercisesGenerated={handleAIExercisesGenerated}
+        />
+      )}
 
       {renderCurrentExercise()}
     </div>
