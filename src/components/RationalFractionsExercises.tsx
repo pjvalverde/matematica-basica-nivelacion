@@ -400,64 +400,27 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
   const handleAIExercisesGenerated = (generatedExercises: any[]) => {
     console.log("Recibidos ejercicios generados por IA:", generatedExercises);
     
+    // IMPORTANTE: Usar la selección actual para los ejercicios, independientemente de los metadatos
+    // Esto garantiza que se respete lo que el usuario seleccionó
+    
     // Convertir el formato de ejercicios de la IA al formato usado en este componente
     const formattedExercises = generatedExercises.map(ex => {
-      // Valores por defecto (usados si no hay metadatos)
-      let exerciseTypeToUse = exerciseType;
-      let difficultyToUse = difficulty;
-      
-      // Si el ejercicio tiene metadatos, usarlos para preservar la selección del usuario
-      if (ex.metadata) {
-        console.log("Ejercicio con metadatos:", ex.metadata);
-        
-        // Mapear el tipo de ejercicio según los metadatos
-        if (ex.metadata.type) {
-          if (ex.metadata.type.includes('simplifica') || ex.metadata.type === 'simplificación') {
-            exerciseTypeToUse = ExerciseType.SIMPLIFICATION;
-            console.log("Estableciendo tipo: Simplificación");
-          } else if (ex.metadata.type.includes('suma') || ex.metadata.type === 'suma y resta') {
-            exerciseTypeToUse = ExerciseType.ADDITION_SUBTRACTION;
-            console.log("Estableciendo tipo: Suma y resta");
-          } else if (ex.metadata.type.includes('multi') || ex.metadata.type === 'multiplicación y división') {
-            exerciseTypeToUse = ExerciseType.MULTIPLICATION_DIVISION;
-            console.log("Estableciendo tipo: Multiplicación y división");
-          } else if (ex.metadata.type.includes('operaciones') || ex.metadata.type === 'operaciones combinadas') {
-            exerciseTypeToUse = ExerciseType.COMPLEX_OPERATIONS;
-            console.log("Estableciendo tipo: Operaciones complejas");
-          }
-        }
-        
-        // Mapear la dificultad según los metadatos
-        if (ex.metadata.difficulty) {
-          if (ex.metadata.difficulty === 'easy') {
-            difficultyToUse = DifficultyLevel.EASY;
-            console.log("Estableciendo dificultad: Fácil");
-          } else if (ex.metadata.difficulty === 'medium') {
-            difficultyToUse = DifficultyLevel.MEDIUM;
-            console.log("Estableciendo dificultad: Medio");
-          } else if (ex.metadata.difficulty === 'hard') {
-            difficultyToUse = DifficultyLevel.HARD;
-            console.log("Estableciendo dificultad: Difícil");
-          }
-        }
-      } else {
-        console.log("Ejercicio sin metadatos, usando valores por defecto");
-      }
-      
-      // Crear el ejercicio con el formato necesario
+      // FORZAR el tipo y dificultad según la selección actual del usuario
+      // Esto asegura que se respete lo que el usuario seleccionó
       return {
         id: generateId(),
-        type: exerciseTypeToUse,
-        difficulty: difficultyToUse,
+        type: exerciseType, // USAR SIEMPRE la selección del usuario
+        difficulty: difficulty, // USAR SIEMPRE la selección del usuario
         problem: ex.problem,
         solution: ex.solution,
         hint: ex.hint || "Intenta factorizar numerador y denominador cuando sea posible.",
-        points: difficultyToUse === DifficultyLevel.EASY ? 1 : 
-                difficultyToUse === DifficultyLevel.MEDIUM ? 2 : 3
+        points: difficulty === DifficultyLevel.EASY ? 1 : 
+                difficulty === DifficultyLevel.MEDIUM ? 2 : 3
       };
     });
     
-    console.log("Ejercicios formateados:", formattedExercises);
+    console.log("Ejercicios formateados con tipo forzado:", formattedExercises);
+    console.log("Usando FORZOSAMENTE tipo: ", exerciseType, " y dificultad: ", difficulty);
     
     setAiExercises(formattedExercises);
     
