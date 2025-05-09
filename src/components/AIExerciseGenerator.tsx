@@ -137,7 +137,7 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
   else {
     // IMPORTANTE: Siempre tenemos que considerar el TIPO primero
     // Ejercicios de suma y resta
-    if (type && type.includes('suma')) {
+    if (type === 'addition_subtraction') {
       if (difficulty === 'easy') {
         exercisesPool = [
           {
@@ -195,7 +195,7 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
       }
     } 
     // Ejercicios de simplificación
-    else if (type && type.includes('simplifica')) {
+    else if (type === 'simplification') {
       if (difficulty === 'easy') {
         exercisesPool = [
           {
@@ -253,7 +253,7 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
       }
     } 
     // Ejercicios de multiplicación y división
-    else if (type && type.includes('multi')) {
+    else if (type === 'multiplication_division') {
       if (difficulty === 'easy') {
         exercisesPool = [
           {
@@ -311,7 +311,7 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
       }
     } 
     // Ejercicios de operaciones combinadas
-    else if (type && type.includes('operaciones combinadas')) {
+    else if (type === 'complex_operations') {
       if (difficulty === 'easy') {
         exercisesPool = [
           // Combinación de suma y producto
@@ -495,6 +495,171 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
   return shuffledExercises.slice(0, 3);
 };
 
+// NUEVA FUNCIÓN: Obtener ejercicios garantizados para cada combinación
+const getGuaranteedExercise = (topic: 'factorization' | 'rationalfractions', difficulty: 'easy' | 'medium' | 'hard', type: string) => {
+  console.log("🔥 GENERANDO EJERCICIO GARANTIZADO para:", topic, difficulty, type);
+
+  // Para fracciones racionales
+  if (topic === 'rationalfractions') {
+    // Operaciones combinadas (complejo)
+    if (type === 'complex_operations') {
+      if (difficulty === 'hard') {
+        return {
+          problem: "\\frac{x^3-1}{x-1} \\cdot \\frac{x+1}{x^2+x+1} + \\frac{x^2-1}{(x-1)(x^2+x+1)}",
+          solution: "\\frac{(x-1)(x^2+x+1)}{x-1} \\cdot \\frac{x+1}{x^2+x+1} + \\frac{(x-1)(x+1)}{(x-1)(x^2+x+1)} = \\frac{x+1 + (x+1)}{x^2+x+1} = \\frac{2(x+1)}{x^2+x+1}",
+          hint: "Factoriza completamente, simplifica y encuentra el denominador común",
+          type: "complex_operations",
+          difficulty: "hard"
+        };
+      } else if (difficulty === 'medium') {
+        return {
+          problem: "\\frac{x+1}{x-1} \\cdot \\frac{x-1}{x+2} + \\frac{3}{x+2}",
+          solution: "\\frac{x+1}{x+2} + \\frac{3}{x+2} = \\frac{x+1+3}{x+2} = \\frac{x+4}{x+2}",
+          hint: "Simplifica el producto y luego suma con denominador común",
+          type: "complex_operations",
+          difficulty: "medium"
+        };
+      } else { // easy
+        return {
+          problem: "\\frac{x}{x-1} \\cdot \\frac{2}{x} + \\frac{1}{x-1}",
+          solution: "\\frac{2}{x-1} + \\frac{1}{x-1} = \\frac{3}{x-1}",
+          hint: "Primero resuelve el producto y luego la suma",
+          type: "complex_operations",
+          difficulty: "easy"
+        };
+      }
+    }
+    
+    // Suma y resta
+    else if (type === 'addition_subtraction') {
+      if (difficulty === 'hard') {
+        return {
+          problem: "\\frac{x}{x-1} + \\frac{1}{x+1}",
+          solution: "\\frac{x(x+1) + (x-1)}{(x-1)(x+1)} = \\frac{x^2+x+x-1}{(x-1)(x+1)} = \\frac{x^2+2x-1}{(x-1)(x+1)}",
+          hint: "Encuentra el denominador común (x-1)(x+1)",
+          type: "addition_subtraction",
+          difficulty: "hard"
+        };
+      } else if (difficulty === 'medium') {
+        return {
+          problem: "\\frac{3}{x-2} - \\frac{1}{x+1}",
+          solution: "\\frac{3(x+1) - (x-2)}{(x-2)(x+1)} = \\frac{3x+3-x+2}{(x-2)(x+1)} = \\frac{2x+5}{(x-2)(x+1)}",
+          hint: "Encuentra el denominador común (x-2)(x+1)",
+          type: "addition_subtraction",
+          difficulty: "medium"
+        };
+      } else { // easy
+        return {
+          problem: "\\frac{2}{x} + \\frac{3}{x}",
+          solution: "\\frac{5}{x}",
+          hint: "Suma directamente los numeradores por tener el mismo denominador",
+          type: "addition_subtraction",
+          difficulty: "easy"
+        };
+      }
+    }
+    
+    // Multiplicación y división
+    else if (type === 'multiplication_division') {
+      if (difficulty === 'hard') {
+        return {
+          problem: "\\frac{x^2-25}{x^2-4} \\cdot \\frac{x-2}{x-5}",
+          solution: "\\frac{(x-5)(x+5)}{(x-2)(x+2)} \\cdot \\frac{x-2}{x-5} = \\frac{(x+5)}{(x+2)}",
+          hint: "Factoriza las diferencias de cuadrados y cancela factores comunes",
+          type: "multiplication_division",
+          difficulty: "hard"
+        };
+      } else if (difficulty === 'medium') {
+        return {
+          problem: "\\frac{x^2-4}{x+2} \\div \\frac{x-2}{x+1}",
+          solution: "\\frac{(x-2)(x+2)}{(x+2)} \\cdot \\frac{x+1}{x-2} = \\frac{(x+2)(x+1)}{(x+2)(x-2)} = \\frac{x+1}{x-2}",
+          hint: "Para dividir fracciones, multiplica por el recíproco de la segunda",
+          type: "multiplication_division",
+          difficulty: "medium"
+        };
+      } else { // easy
+        return {
+          problem: "\\frac{x}{x+1} \\cdot \\frac{x+1}{x-1}",
+          solution: "\\frac{x}{x-1}",
+          hint: "Cancela los factores comunes (x+1)",
+          type: "multiplication_division",
+          difficulty: "easy"
+        };
+      }
+    }
+    
+    // Simplificación
+    else if (type === 'simplification') {
+      if (difficulty === 'hard') {
+        return {
+          problem: "\\frac{x^4-16}{x^2-4}",
+          solution: "\\frac{(x^2-4)(x^2+4)}{(x-2)(x+2)} = \\frac{(x-2)(x+2)(x^2+4)}{(x-2)(x+2)} = x^2+4",
+          hint: "Factoriza paso a paso tanto el numerador como el denominador",
+          type: "simplification",
+          difficulty: "hard"
+        };
+      } else if (difficulty === 'medium') {
+        return {
+          problem: "\\frac{x^2-4}{x^2-4x+4}",
+          solution: "\\frac{(x-2)(x+2)}{(x-2)^2} = \\frac{x+2}{x-2}",
+          hint: "Factoriza numerador y denominador",
+          type: "simplification",
+          difficulty: "medium"
+        };
+      } else { // easy
+        return {
+          problem: "\\frac{x^2-1}{x-1}",
+          solution: "x+1",
+          hint: "Factoriza el numerador como (x-1)(x+1)",
+          type: "simplification",
+          difficulty: "easy"
+        };
+      }
+    }
+    
+    // Para cualquier otro tipo, usar fracciones básicas
+    else {
+      if (difficulty === 'hard') {
+        return {
+          problem: "\\frac{3x^2 + 6x - 24}{9}",
+          solution: "\\frac{3(x^2 + 2x - 8)}{9} = \\frac{3(x+4)(x-2)}{9} = \\frac{(x+4)(x-2)}{3}",
+          hint: "Primero factoriza el numerador sacando factor común, luego simplifica si es posible",
+          type: "basic",
+          difficulty: "hard"
+        };
+      } else if (difficulty === 'medium') {
+        return {
+          problem: "\\frac{2x^2 + 4x}{6}",
+          solution: "\\frac{2x(x+2)}{6} = \\frac{x(x+2)}{3}",
+          hint: "Saca factor común en el numerador y simplifica con el denominador",
+          type: "basic",
+          difficulty: "medium"
+        };
+      } else { // easy
+        return {
+          problem: "\\frac{5x}{10}",
+          solution: "\\frac{x}{2}",
+          hint: "Simplifica dividiendo numerador y denominador por 5",
+          type: "basic",
+          difficulty: "easy"
+        };
+      }
+    }
+  }
+  
+  // Para factorización
+  else {
+    // Algún ejercicio de factorización de respaldo
+    return {
+      problem: "x^2 + 5x + 6",
+      solution: "(x + 2)(x + 3)",
+      hint: "Busca dos números que multiplicados den 6 y sumados den 5",
+      type: type,
+      difficulty: difficulty
+    };
+  }
+};
+
 const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExercisesGenerated }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -516,10 +681,10 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
       ]
     : [
         { value: '', label: 'Cualquier tipo' },
-        { value: 'simplificación', label: 'Simplificación' },
-        { value: 'suma y resta', label: 'Suma y resta' },
-        { value: 'multiplicación y división', label: 'Multiplicación y división' },
-        { value: 'operaciones combinadas', label: 'Operaciones combinadas' }
+        { value: 'simplification', label: 'Simplificación' },
+        { value: 'addition_subtraction', label: 'Suma y resta' },
+        { value: 'multiplication_division', label: 'Multiplicación y división' },
+        { value: 'complex_operations', label: 'Operaciones combinadas' }
       ];
 
   const generateExercises = async () => {
@@ -531,6 +696,46 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
       setForceUI(true);
 
       console.log("🔒 INICIANDO GENERACIÓN CON TIPO:", exerciseType, "Y DIFICULTAD:", difficulty);
+      
+      // NUEVA ESTRATEGIA: Usar ejercicios garantizados cuando se pida operaciones combinadas difícil
+      if (topic === 'rationalfractions' && 
+         (exerciseType === 'complex_operations' || exerciseType === 'addition_subtraction' || 
+          exerciseType === 'multiplication_division' || exerciseType === 'simplification')) {
+        
+        console.log("🔥 USANDO EJERCICIO GARANTIZADO");
+        
+        const guaranteedExercise = getGuaranteedExercise(topic, difficulty, exerciseType);
+        
+        // Crear array con el ejercicio garantizado
+        const forcedExercises = [
+          {
+            ...guaranteedExercise,
+            metadata: {
+              forceUI: true,
+              generatedByAI: false,
+              difficulty: difficulty,
+              type: exerciseType,
+              isGuaranteed: true,
+              timestamp: new Date().getTime()
+            },
+            difficultyOverride: difficulty,
+            typeOverride: exerciseType
+          }
+        ];
+        
+        // Guardar en localStorage para debugging
+        localStorage.setItem('guaranteed_exercise', JSON.stringify({
+          timestamp: new Date().toString(),
+          difficulty: difficulty,
+          exerciseType: exerciseType,
+          forcedExercises: forcedExercises
+        }));
+        
+        // Entregar inmediatamente el ejercicio garantizado
+        onExercisesGenerated(forcedExercises);
+        setIsLoading(false);
+        return;
+      }
       
       // SOLUCIÓN EXTREMA: Garantizar metadatos correctos en todas las etapas
       // 1. Generar ejercicios locales que coincidan EXACTAMENTE con lo seleccionado

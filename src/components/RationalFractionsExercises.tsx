@@ -661,6 +661,43 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     }
   };
 
+  // NUEVO: Función para mapear los strings de tipo a valores enum
+  const mapStringTypeToEnum = (typeStr: string): ExerciseType => {
+    // Mapeo explícito desde valores de string a valores enum
+    switch(typeStr) {
+      case 'simplification':
+        return ExerciseType.SIMPLIFICATION;
+      case 'addition_subtraction':
+        return ExerciseType.ADDITION_SUBTRACTION;
+      case 'multiplication_division':
+        return ExerciseType.MULTIPLICATION_DIVISION;
+      case 'complex_operations':
+        return ExerciseType.COMPLEX_OPERATIONS;
+      case '':
+        // Si no hay tipo especificado, usar el tipo actualmente seleccionado
+        return exerciseType;
+      default:
+        console.warn(`Tipo no reconocido: "${typeStr}", usando tipo seleccionado: ${exerciseType}`);
+        return exerciseType;
+    }
+  };
+  
+  // NUEVO: Función para mapear los strings de dificultad a valores enum
+  const mapStringDifficultyToEnum = (diffStr: string): DifficultyLevel => {
+    // Mapeo explícito desde valores de string a valores enum
+    switch(diffStr) {
+      case 'easy':
+        return DifficultyLevel.EASY;
+      case 'medium':
+        return DifficultyLevel.MEDIUM;
+      case 'hard':
+        return DifficultyLevel.HARD;
+      default:
+        console.warn(`Dificultad no reconocida: "${diffStr}", usando dificultad seleccionada: ${difficulty}`);
+        return difficulty;
+    }
+  };
+
   // Manejar generación de ejercicios con IA
   const handleAIExercisesGenerated = (generatedExercises: any[]) => {
     console.log("⚡ EJERCICIOS RECIBIDOS DEL GENERADOR:", generatedExercises);
@@ -680,18 +717,34 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     // Convertir el formato de ejercicios de la IA al formato usado en este componente
     // IGNORANDO COMPLETAMENTE cualquier metadato que pudieran tener
     const forcedExercises = generatedExercises.map(ex => {
+      // NUEVO: Si el ejercicio tiene typeOverride o difficultyOverride, usarlos primero
+      const selectedType = ex.typeOverride 
+        ? mapStringTypeToEnum(ex.typeOverride) 
+        : exerciseType;
+        
+      const selectedDifficulty = ex.difficultyOverride 
+        ? mapStringDifficultyToEnum(ex.difficultyOverride) 
+        : difficulty;
+      
+      console.log("⚡ MAPEANDO VALORES:", {
+        typeOverride: ex.typeOverride,
+        difficultyOverride: ex.difficultyOverride,
+        resultingType: selectedType,
+        resultingDifficulty: selectedDifficulty
+      });
+      
       return {
         id: generateId(),
         // FORZAR UI: Usar EXCLUSIVAMENTE los valores seleccionados por el usuario
-        type: exerciseType,         // FORZAR el tipo seleccionado en la UI
-        difficulty: difficulty,      // FORZAR la dificultad seleccionada en la UI
+        type: selectedType,         // FORZAR el tipo seleccionado en la UI
+        difficulty: selectedDifficulty,      // FORZAR la dificultad seleccionada en la UI
         // Mantener contenido del ejercicio
         problem: ex.problem || "x^2 + 5x + 6",
         solution: ex.solution || "(x + 2)(x + 3)",
         hint: ex.hint || "Intenta factorizar numerador y denominador cuando sea posible.",
         // FORZAR puntos según la dificultad seleccionada en la UI
-        points: difficulty === DifficultyLevel.EASY ? 1 : 
-                difficulty === DifficultyLevel.MEDIUM ? 2 : 3,
+        points: selectedDifficulty === DifficultyLevel.EASY ? 1 : 
+                selectedDifficulty === DifficultyLevel.MEDIUM ? 2 : 3,
         // Agregar metadatos de forzado para debugging
         _forced: {
           timestamp: Date.now(),
