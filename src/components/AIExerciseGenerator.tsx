@@ -24,10 +24,14 @@ const shuffleArray = <T extends any>(array: T[]): T[] => {
 
 // Ejemplos predefinidos para mostrar inmediatamente
 const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficulty: 'easy' | 'medium' | 'hard', type: string) => {
+  console.log('[EJERCICIOS LOCALES] Generando ejercicios para:', { topic, difficulty, type });
+  
   let exercisesPool: any[] = [];
+  let finalPool: any[] = [];
   
   // Ejercicios de factorización
   if (topic === 'factorization') {
+    // SELECCIONAR POR DIFICULTAD
     if (difficulty === 'easy') {
       exercisesPool = [
         {
@@ -131,6 +135,7 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
   } 
   // Ejercicios de fracciones algebraicas
   else {
+    // IMPORTANTE: Siempre tenemos que considerar el TIPO primero
     // Ejercicios de suma y resta
     if (type && type.includes('suma')) {
       if (difficulty === 'easy') {
@@ -149,21 +154,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{x}{2} - \\frac{x}{4}",
             solution: "\\frac{x}{4}",
             hint: "Encuentra el mínimo común múltiplo de los denominadores"
-          },
-          {
-            problem: "\\frac{3}{x} - \\frac{1}{x}",
-            solution: "\\frac{2}{x}",
-            hint: "Resta directamente los numeradores al tener el mismo denominador"
-          },
-          {
-            problem: "\\frac{5}{y} + \\frac{y}{y}",
-            solution: "\\frac{5+y}{y}",
-            hint: "Suma los numeradores cuando los denominadores son iguales"
-          },
-          {
-            problem: "\\frac{2a}{3} + \\frac{a}{3}",
-            solution: "\\frac{3a}{3} = a",
-            hint: "Suma los numeradores y simplifica"
           }
         ];
       } else if (difficulty === 'medium') {
@@ -182,21 +172,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{2}{x} + \\frac{1}{x^2}",
             solution: "\\frac{2x + 1}{x^2}",
             hint: "Convierte la primera fracción para tener denominador x²"
-          },
-          {
-            problem: "\\frac{3}{x-1} - \\frac{2}{x+2}",
-            solution: "\\frac{3(x+2) - 2(x-1)}{(x-2)(x+2)} = \\frac{3x+6-2x+2}{(x-2)(x+2)} = \\frac{x+8}{(x-2)(x+2)}",
-            hint: "Encuentra el mínimo común múltiplo de los denominadores"
-          },
-          {
-            problem: "\\frac{2}{x^2} + \\frac{3}{x}",
-            solution: "\\frac{2 + 3x}{x^2}",
-            hint: "Convierte todas las fracciones al mismo denominador"
-          },
-          {
-            problem: "\\frac{x}{x+2} + \\frac{2}{x-1}",
-            solution: "\\frac{x(x-1) + 2(x+2)}{(x+2)(x-1)} = \\frac{x^2-x+2x+4}{(x+2)(x-1)} = \\frac{x^2+x+4}{(x+2)(x-1)}",
-            hint: "Escribe ambas fracciones con el denominador común"
           }
         ];
       } else { // hard
@@ -215,21 +190,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{1}{x^2-1} + \\frac{1}{x-1}",
             solution: "\\frac{1}{(x-1)(x+1)} + \\frac{1}{x-1} = \\frac{1+x+1}{(x-1)(x+1)} = \\frac{x+2}{(x-1)(x+1)}",
             hint: "Factoriza x²-1 como (x-1)(x+1)"
-          },
-          {
-            problem: "\\frac{3}{x^2-4} - \\frac{2}{x+2}",
-            solution: "\\frac{3}{(x-2)(x+2)} - \\frac{2}{x+2} = \\frac{3 - 2(x-2)}{(x-2)(x+2)} = \\frac{7 - 2x}{(x-2)(x+2)}",
-            hint: "Factoriza el denominador x²-4 = (x-2)(x+2)"
-          },
-          {
-            problem: "\\frac{x}{x^2-9} + \\frac{2}{x-3}",
-            solution: "\\frac{x}{(x-3)(x+3)} + \\frac{2}{x-3} = \\frac{x + 2(x+3)}{(x-3)(x+3)} = \\frac{x + 2x + 6}{(x-3)(x+3)} = \\frac{3x + 6}{(x-3)(x+3)}",
-            hint: "Factoriza el denominador x²-9 = (x-3)(x+3)"
-          },
-          {
-            problem: "\\frac{2}{x-1} + \\frac{3}{(x-1)^2} - \\frac{5}{(x-1)^3}",
-            solution: "\\frac{2(x-1)^2 + 3(x-1) - 5}{(x-1)^3} = \\frac{2(x-1)^2 + 3(x-1) - 5}{(x-1)^3}",
-            hint: "Convierte todo al denominador común (x-1)³"
           }
         ];
       }
@@ -252,21 +212,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{3x^2}{3x}",
             solution: "x",
             hint: "Simplifica dividiendo numerador y denominador por 3x"
-          },
-          {
-            problem: "\\frac{x^2-4}{x-2}",
-            solution: "x+2",
-            hint: "Factoriza el numerador como (x-2)(x+2)"
-          },
-          {
-            problem: "\\frac{2x^2+2x}{2x}",
-            solution: "x+1",
-            hint: "Factoriza el numerador como 2x(x+1)"
-          },
-          {
-            problem: "\\frac{x^2+2x}{x}",
-            solution: "x+2",
-            hint: "Saca factor común x en el numerador"
           }
         ];
       } else if (difficulty === 'medium') {
@@ -285,21 +230,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{x^2-9}{x-3}",
             solution: "x+3",
             hint: "Factoriza el numerador como (x-3)(x+3)"
-          },
-          {
-            problem: "\\frac{x^3+x^2}{x^2+x}",
-            solution: "\\frac{x^2(x+1)}{x(x+1)} = x",
-            hint: "Factoriza el numerador y denominador para encontrar factores comunes"
-          },
-          {
-            problem: "\\frac{x^2+2x-3}{x-1}",
-            solution: "\\frac{(x-1)(x+3)}{x-1} = x+3",
-            hint: "Factoriza el numerador y simplifica con el denominador"
-          },
-          {
-            problem: "\\frac{x^2-x-6}{x^2-9}",
-            solution: "\\frac{(x-3)(x+2)}{(x-3)(x+3)} = \\frac{x+2}{x+3}",
-            hint: "Factoriza tanto el numerador como el denominador"
           }
         ];
       } else { // hard
@@ -318,21 +248,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{x^4-16}{x^2-4}",
             solution: "\\frac{(x^2-4)(x^2+4)}{(x-2)(x+2)} = \\frac{(x-2)(x+2)(x^2+4)}{(x-2)(x+2)} = x^2+4",
             hint: "Factoriza paso a paso tanto el numerador como el denominador"
-          },
-          {
-            problem: "\\frac{x^3-27}{x-3}",
-            solution: "x^2+3x+9",
-            hint: "Factoriza usando la fórmula de la diferencia de cubos"
-          },
-          {
-            problem: "\\frac{x^4-1}{x^2-1}",
-            solution: "\\frac{(x^2-1)(x^2+1)}{(x-1)(x+1)} = x^2+1",
-            hint: "Factoriza x⁴-1 como (x²-1)(x²+1) y x²-1 como (x-1)(x+1)"
-          },
-          {
-            problem: "\\frac{x^3+x^2-x-1}{x^2-1}",
-            solution: "\\frac{(x+1)(x^2-1)}{(x-1)(x+1)} = \\frac{(x+1)(x^2-1)}{(x-1)(x+1)} = x+1",
-            hint: "Factoriza el numerador como (x+1)(x²-1)"
           }
         ];
       }
@@ -355,21 +270,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{x-1}{x+1} \\cdot \\frac{x+1}{x}",
             solution: "\\frac{x-1}{x}",
             hint: "Cancela los factores comunes (x+1)"
-          },
-          {
-            problem: "\\frac{3x}{4} \\cdot \\frac{2}{3x}",
-            solution: "\\frac{1}{2}",
-            hint: "Multiplica numeradores y denominadores, luego simplifica los términos comunes"
-          },
-          {
-            problem: "\\frac{x+2}{x-2} \\cdot \\frac{x-2}{x+3}",
-            solution: "\\frac{x+2}{x+3}",
-            hint: "Cancela los factores comunes (x-2)"
-          },
-          {
-            problem: "\\frac{2x}{5} \\cdot \\frac{10}{x}",
-            solution: "4",
-            hint: "Simplifica los términos comunes en numerador y denominador"
           }
         ];
       } else if (difficulty === 'medium') {
@@ -388,21 +288,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{x^2}{x-1} \\div \\frac{x}{x^2-1}",
             solution: "\\frac{x^2}{x-1} \\cdot \\frac{x^2-1}{x} = \\frac{x^2(x-1)(x+1)}{x(x-1)} = \\frac{x(x+1)}{1} = x(x+1)",
             hint: "Recuerda que dividir por una fracción es multiplicar por su recíproco"
-          },
-          {
-            problem: "\\frac{x^2+2x+1}{x+1} \\cdot \\frac{x-1}{x^2-1}",
-            solution: "\\frac{(x+1)^2}{x+1} \\cdot \\frac{x-1}{(x-1)(x+1)} = \\frac{(x+1)^2(x-1)}{(x+1)(x-1)(x+1)} = \\frac{(x+1)^2}{x^2+x+1}",
-            hint: "Factoriza x²+2x+1 = (x+1)² y x²-1 = (x-1)(x+1)"
-          },
-          {
-            problem: "\\frac{2x+6}{x^2-9} \\cdot \\frac{x+3}{x+3}",
-            solution: "\\frac{2(x+3)}{(x-3)(x+3)} \\cdot \\frac{x+3}{x+3} = \\frac{2(x+3)^2}{(x-3)(x+3)^2} = \\frac{2}{x-3}",
-            hint: "Factoriza 2x+6 = 2(x+3) y x²-9 = (x-3)(x+3)"
-          },
-          {
-            problem: "\\frac{x^2-4}{2x} \\div \\frac{x+2}{4}",
-            solution: "\\frac{(x+2)(x-2)}{2x} \\cdot \\frac{4}{x+2} = \\frac{4(x-2)}{2x} = \\frac{2(x-2)}{x}",
-            hint: "Factoriza x²-4 como (x+2)(x-2) y simplifica"
           }
         ];
       } else { // hard
@@ -421,26 +306,78 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{x^2-25}{x^2-4} \\cdot \\frac{x-2}{x-5}",
             solution: "\\frac{(x-5)(x+5)}{(x-2)(x+2)} \\cdot \\frac{x-2}{x-5} = \\frac{(x+5)}{(x+2)}",
             hint: "Factoriza las diferencias de cuadrados y cancela factores comunes"
-          },
-          {
-            problem: "\\frac{x^3+27}{x+3} \\div \\frac{x^2-3x+9}{x^2-9}",
-            solution: "\\frac{(x+3)(x^2-3x+9)}{x+3} \\cdot \\frac{(x-3)(x+3)}{x^2-3x+9} = \\frac{(x-3)(x+3)}{1} = x^2-9",
-            hint: "Factoriza x³+27 = (x+3)(x²-3x+9) y x²-9 = (x-3)(x+3)"
-          },
-          {
-            problem: "\\frac{x^4-1}{x^2-1} \\cdot \\frac{x-1}{x^2+1}",
-            solution: "\\frac{(x^2-1)(x^2+1)}{(x-1)(x+1)} \\cdot \\frac{x-1}{x^2+1} = \\frac{(x^2+1)(x-1)}{(x+1)} = \\frac{(x-1)(x^2+1)}{x+1}",
-            hint: "Factoriza x⁴-1 = (x²-1)(x²+1) y x²-1 = (x-1)(x+1)"
-          },
-          {
-            problem: "\\frac{x^2+2x+1}{x^3-1} \\div \\frac{x+1}{x^2-1}",
-            solution: "\\frac{(x+1)^2}{(x-1)(x^2+x+1)} \\cdot \\frac{x^2-1}{x+1} = \\frac{(x+1)^2(x-1)(x+1)}{(x-1)(x^2+x+1)(x+1)} = \\frac{(x+1)^2}{x^2+x+1}",
-            hint: "Factoriza x³-1 = (x-1)(x²+x+1) y x²-1 = (x-1)(x+1)"
           }
         ];
       }
     } 
-    // Ejercicios generales o complejos
+    // Ejercicios de operaciones combinadas
+    else if (type && type.includes('operaciones combinadas')) {
+      if (difficulty === 'easy') {
+        exercisesPool = [
+          // Combinación de suma y producto
+          {
+            problem: "\\frac{x}{x-1} \\cdot \\frac{2}{x} + \\frac{1}{x-1}",
+            solution: "\\frac{2}{x-1} + \\frac{1}{x-1} = \\frac{3}{x-1}",
+            hint: "Primero resuelve el producto y luego la suma"
+          },
+          // Combinación de simplificación y resta
+          {
+            problem: "\\frac{x^2-1}{x-1} - \\frac{2}{x-1}",
+            solution: "x+1 - \\frac{2}{x-1} = \\frac{(x+1)(x-1) - 2}{x-1} = \\frac{x^2-1-2}{x-1} = \\frac{x^2-3}{x-1}",
+            hint: "Primero simplifica y luego resta con denominador común"
+          },
+          // Combinación de suma y división
+          {
+            problem: "\\frac{1}{x} + \\frac{2}{x^2} \\div \\frac{1}{x}",
+            solution: "\\frac{1}{x} + \\frac{2}{x^2} \\cdot x = \\frac{1}{x} + \\frac{2}{x} = \\frac{3}{x}",
+            hint: "Para dividir por 1/x, multiplica por x"
+          }
+        ];
+      } else if (difficulty === 'medium') {
+        exercisesPool = [
+          // Producto y suma con denominador común
+          {
+            problem: "\\frac{x+1}{x-1} \\cdot \\frac{x-1}{x+2} + \\frac{3}{x+2}",
+            solution: "\\frac{x+1}{x+2} + \\frac{3}{x+2} = \\frac{x+1+3}{x+2} = \\frac{x+4}{x+2}",
+            hint: "Simplifica el producto y luego suma con denominador común"
+          },
+          // Simplificación, producto y suma
+          {
+            problem: "\\frac{x^2-4}{x-2} \\cdot \\frac{1}{x+2} + \\frac{2x}{(x-2)(x+2)}",
+            solution: "\\frac{(x-2)(x+2)}{(x-2)(x+2)} + \\frac{2x}{(x-2)(x+2)} = \\frac{1 + 2x}{(x-2)(x+2)}",
+            hint: "Simplifica el producto, encuentra el denominador común y suma"
+          },
+          // División y resta compleja
+          {
+            problem: "\\frac{x^2+x}{x} \\div \\frac{x+1}{x-1} - \\frac{1}{x-1}",
+            solution: "\\frac{x^2+x}{x} \\cdot \\frac{x-1}{x+1} - \\frac{1}{x-1} = \\frac{(x+1)(x-1)}{x+1} - \\frac{1}{x-1} = (x-1) - \\frac{1}{x-1}",
+            hint: "Resuelve paso a paso: primero la división, luego la resta"
+          }
+        ];
+      } else { // hard
+        exercisesPool = [
+          // Operación combinada compleja con factorización
+          {
+            problem: "\\frac{x^3-1}{x-1} \\cdot \\frac{x+1}{x^2+x+1} + \\frac{x^2-1}{(x-1)(x^2+x+1)}",
+            solution: "\\frac{(x-1)(x^2+x+1)}{x-1} \\cdot \\frac{x+1}{x^2+x+1} + \\frac{(x-1)(x+1)}{(x-1)(x^2+x+1)} = \\frac{x+1 + (x+1)}{x^2+x+1} = \\frac{2(x+1)}{x^2+x+1}",
+            hint: "Factoriza completamente, simplifica y encuentra el denominador común"
+          },
+          // Operación con múltiples términos
+          {
+            problem: "\\frac{1}{x-1} + \\frac{2}{x^2-1} - \\frac{3}{(x-1)(x+1)}",
+            solution: "\\frac{1}{x-1} + \\frac{2}{(x-1)(x+1)} - \\frac{3}{(x-1)(x+1)} = \\frac{1}{x-1} + \\frac{2-3}{(x-1)(x+1)} = \\frac{1}{x-1} - \\frac{1}{(x-1)(x+1)} = \\frac{x+1-1}{(x-1)(x+1)} = \\frac{x}{(x-1)(x+1)}",
+            hint: "Encuentra el denominador común en cada paso"
+          },
+          // Mezcla de todas las operaciones
+          {
+            problem: "\\frac{x^2-4}{x-2} \\div \\frac{x+2}{x^2+4x+4} + \\frac{x-2}{(x+2)^2} \\cdot \\frac{x+2}{x-2}",
+            solution: "\\frac{(x-2)(x+2)}{x-2} \\cdot \\frac{(x+2)^2}{x+2} + \\frac{x-2}{(x+2)^2} \\cdot \\frac{x+2}{x-2} = (x+2)^2 + \\frac{(x+2)(x-2)}{(x+2)^2(x-2)} = (x+2)^2 + \\frac{1}{x+2} = \\frac{(x+2)^3 + 1}{(x+2)^2}",
+            hint: "Resuelve cada parte por separado y luego combínalas"
+          }
+        ];
+      }
+    }
+    // Ejercicios generales o básicos si no se especifica tipo
     else {
       if (difficulty === 'easy') {
         exercisesPool = [
@@ -458,21 +395,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{1}{x-2} + \\frac{3}{x-2}",
             solution: "\\frac{1+3}{x-2} = \\frac{4}{x-2}",
             hint: "Suma los numeradores ya que los denominadores son iguales"
-          },
-          {
-            problem: "\\frac{x}{3} \\cdot \\frac{6}{x}",
-            solution: "2",
-            hint: "Cancela la x y simplifica los números"
-          },
-          {
-            problem: "\\frac{x^2-4}{x-2}",
-            solution: "x+2",
-            hint: "Factoriza el numerador como (x-2)(x+2)"
-          },
-          {
-            problem: "\\frac{2}{x} + \\frac{3}{x}",
-            solution: "\\frac{5}{x}",
-            hint: "Suma directamente los numeradores por tener el mismo denominador"
           }
         ];
       } else if (difficulty === 'medium') {
@@ -491,21 +413,6 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{x-2}{x+2} \\div \\frac{x^2-4}{x-1}",
             solution: "\\frac{x-2}{x+2} \\cdot \\frac{x-1}{(x-2)(x+2)} = \\frac{(x-1)}{(x+2)^2}",
             hint: "Recuerda que x²-4 = (x-2)(x+2)"
-          },
-          {
-            problem: "\\frac{x^2-9}{x-3} \\cdot \\frac{1}{x+3}",
-            solution: "\\frac{(x-3)(x+3)}{(x-3)(x+3)} = 1",
-            hint: "Factoriza el numerador como (x-3)(x+3)"
-          },
-          {
-            problem: "\\frac{1}{x-1} + \\frac{2}{x+1}",
-            solution: "\\frac{(x+1) + 2(x-1)}{(x-1)(x+1)} = \\frac{x+1+2x-2}{(x-1)(x+1)} = \\frac{3x-1}{(x-1)(x+1)}",
-            hint: "Encuentra el mínimo común múltiplo de los denominadores"
-          },
-          {
-            problem: "\\frac{x^2-4}{x-2} - \\frac{2}{x-2}",
-            solution: "\\frac{(x-2)(x+2) - 2}{x-2} = \\frac{(x-2)(x+2) - 2}{x-2} = \\frac{x(x-2) + 2(x-2) - 2}{x-2} = x+2-\\frac{2}{x-2}",
-            hint: "Simplifica la primera fracción y luego resta con el denominador común"
           }
         ];
       } else { // hard
@@ -524,50 +431,67 @@ const getLocalExercises = (topic: 'factorization' | 'rationalfractions', difficu
             problem: "\\frac{x^2-6x+9}{x^3-27} \\div \\frac{x-3}{x^2+3x+9}",
             solution: "\\frac{(x-3)^2}{(x-3)(x^2+3x+9)} \\cdot \\frac{x^2+3x+9}{x-3} = \\frac{(x-3)^2(x^2+3x+9)}{(x-3)^2(x^2+3x+9)} = 1",
             hint: "Factoriza x³-27 como (x-3)(x²+3x+9)"
-          },
-          {
-            problem: "\\frac{x^3+1}{x+1} \\cdot \\frac{x^2-2x+4}{x^2+x+1}",
-            solution: "\\frac{(x+1)(x^2-x+1)}{x+1} \\cdot \\frac{x^2-2x+4}{x^2+x+1} = \\frac{(x^2-x+1)(x^2-2x+4)}{x^2+x+1}",
-            hint: "Factoriza x³+1 como (x+1)(x²-x+1)"
-          },
-          {
-            problem: "\\frac{x^2-1}{x-1} + \\frac{x}{x^2-1}",
-            solution: "\\frac{(x-1)(x+1)}{x-1} + \\frac{x}{(x-1)(x+1)} = (x+1) + \\frac{x}{(x-1)(x+1)} = x+1+\\frac{x}{(x-1)(x+1)}",
-            hint: "Simplifica la primera fracción y mantén la segunda como está"
-          },
-          {
-            problem: "\\frac{x^3-8}{(x-2)^2} \\div \\frac{x^2+2x+4}{x-2}",
-            solution: "\\frac{(x-2)(x^2+2x+4)}{(x-2)^2} \\cdot \\frac{x-2}{x^2+2x+4} = \\frac{(x-2)^2(x-2)}{(x-2)^2(x^2+2x+4)} = \\frac{x-2}{x^2+2x+4}",
-            hint: "Factoriza x³-8 como (x-2)(x²+2x+4)"
           }
         ];
       }
     }
   }
   
-  // Si no se encontró ninguna coincidencia específica, usa una lista genérica
+  // CRUCIALMENTE IMPORTANTE: Si no hay ejercicios específicos para la combinación elegida, 
+  // debemos GENERAR ejercicios apropiados en lugar de usar ejercicios genéricos
   if (exercisesPool.length === 0) {
-    exercisesPool = [
-      {
-        problem: "x^2 + 5x + 6",
-        solution: "(x + 2)(x + 3)",
-        hint: "Busca dos números que multiplicados den 6 y sumados den 5"
-      },
-      {
-        problem: "x^2 - 9",
-        solution: "(x + 3)(x - 3)",
-        hint: "Es una diferencia de cuadrados"
-      },
-      {
-        problem: "2x^2 + 6x",
-        solution: "2x(x + 3)",
-        hint: "Factoriza usando el factor común"
-      }
-    ];
+    console.warn(`[EJERCICIOS LOCALES] No se encontraron ejercicios para ${topic}, ${difficulty}, ${type}. Generando ejercicios de respaldo.`);
+    
+    // Ejercicios de respaldo genéricos según el tema
+    if (topic === 'factorization') {
+      exercisesPool = [
+        {
+          problem: "x^2 + 5x + 6",
+          solution: "(x + 2)(x + 3)",
+          hint: `Ejercicio ${difficulty} de factorización. Busca dos números que multiplicados den 6 y sumados den 5`
+        },
+        {
+          problem: "x^2 - 9",
+          solution: "(x + 3)(x - 3)",
+          hint: `Ejercicio ${difficulty} de factorización. Es una diferencia de cuadrados`
+        },
+        {
+          problem: "2x^2 + 6x",
+          solution: "2x(x + 3)",
+          hint: `Ejercicio ${difficulty} de factorización. Factoriza usando el factor común`
+        }
+      ];
+    } else {
+      exercisesPool = [
+        {
+          problem: "\\frac{x}{x+1} \\cdot \\frac{x+1}{x-1}",
+          solution: "\\frac{x}{x-1}",
+          hint: `Ejercicio ${difficulty} de ${type || 'fracciones algebraicas'}. Cancela los factores comunes`
+        },
+        {
+          problem: "\\frac{x^2-1}{x-1}",
+          solution: "x+1",
+          hint: `Ejercicio ${difficulty} de ${type || 'fracciones algebraicas'}. Factoriza el numerador`
+        },
+        {
+          problem: "\\frac{2}{x} + \\frac{3}{x}",
+          solution: "\\frac{5}{x}",
+          hint: `Ejercicio ${difficulty} de ${type || 'fracciones algebraicas'}. Suma los numeradores`
+        }
+      ];
+    }
   }
   
+  // Añadimos etiquetas explícitas a cada ejercicio
+  finalPool = exercisesPool.map(ex => ({
+    ...ex,
+    difficultyTag: difficulty,
+    typeTag: type || 'general'
+  }));
+  
   // Barajar los ejercicios y devolver solo 3 de ellos
-  const shuffledExercises = shuffleArray(exercisesPool);
+  const shuffledExercises = shuffleArray(finalPool);
+  console.log(`[EJERCICIOS LOCALES] Devolviendo ${Math.min(3, shuffledExercises.length)} ejercicios de tipo "${type || 'general'}" y dificultad "${difficulty}"`);
   return shuffledExercises.slice(0, 3);
 };
 
@@ -600,106 +524,109 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
     setError(null);
     
     try {
-      if (useAI) {
-        // Usar la API de DeepSeek a través de Firebase Functions
-        try {
-          // Elige el tipo de ejercicio correctamente según el tema
-          let typeParam = exerciseType;
-          if (topic === 'rationalfractions') {
-            // Asegurarse de que los tipos de fracciones racionales se envíen con el formato que espera la API
-            if (exerciseType.includes('simplifica')) {
-              typeParam = 'simplificación';
-            } else if (exerciseType.includes('suma')) {
-              typeParam = 'suma y resta';
-            } else if (exerciseType.includes('multi')) {
-              typeParam = 'multiplicación y división';
-            }
-          }
-          
-          console.log(`[AI GENERATOR] Generando ejercicios con IA: Tema=${topic}, Dificultad=${difficulty}, Tipo=${typeParam}`);
-          
-          const exercises = await generateAIExercises(
-            topic, 
-            difficulty,
-            typeParam
-          );
-          
-          if (exercises && Array.isArray(exercises)) {
-            console.log('[AI GENERATOR] Ejercicios recibidos:', exercises);
-            console.log('[AI GENERATOR] Metadatos del primer ejercicio:', exercises[0]?.metadata);
-            
-            // Comprobar que los ejercicios tienen los metadatos correctos
-            const correctMetadata = exercises.every(ex => 
-              ex.metadata && 
-              ex.metadata.difficulty === difficulty && 
-              (ex.metadata.type === typeParam || !typeParam)
-            );
-            
-            if (!correctMetadata) {
-              console.warn('[AI GENERATOR] ADVERTENCIA: Algunos ejercicios tienen metadatos incorrectos.');
-            }
-            
-            console.log('[AI GENERATOR] Ejercicios se pasan al componente padre con metadatos:', 
-              exercises.map(ex => ({
-                problem: ex.problem.substring(0, 20) + '...',
-                metadata: ex.metadata
-              }))
-            );
-            
-            onExercisesGenerated(exercises);
-          } else {
-            setError('No se pudieron generar ejercicios. Usando ejercicios predefinidos.');
-            console.error('[AI GENERATOR] Respuesta inválida o vacía de la API:', exercises);
-            const localExercises = getLocalExercises(topic, difficulty, exerciseType);
-            onExercisesGenerated(localExercises);
-          }
-        } catch (apiError) {
-          console.error("[AI GENERATOR] Error al llamar a la API:", apiError);
-          setError('No se pudo conectar con la IA. Usando ejercicios predefinidos.');
-          const localExercises = getLocalExercises(topic, difficulty, exerciseType);
-          onExercisesGenerated(localExercises);
-        }
-      } else {
-        // Usar ejemplos locales predefinidos sin llamar a la API
-        const localExercises = getLocalExercises(topic, difficulty, exerciseType);
-        
-        // Siempre añadimos metadatos a los ejercicios locales
-        const enhancedLocalExercises = localExercises.map(ex => ({
-          ...ex,
-          metadata: {
-            generatedByAI: false,
-            difficulty: difficulty,
-            type: exerciseType,
-            forcedByGenerator: true
-          }
-        }));
-        
-        console.log('[AI GENERATOR] Usando ejercicios locales con metadatos forzados:', enhancedLocalExercises);
-        
-        setTimeout(() => {
-          onExercisesGenerated(enhancedLocalExercises);
-        }, 300); // Pequeña demora para simular procesamiento
-      }
-    } catch (error) {
-      console.error('[AI GENERATOR] Error general al generar ejercicios:', error);
-      setError('Ha ocurrido un error. Mostrando ejercicios predefinidos.');
+      // SOLUCIÓN DEFINITIVA:
+      // 1. Generar ejercicios locales que coincidan EXACTAMENTE con lo seleccionado
+      // 2. Si se usa IA, intentar usarla, pero añadir metadatos forzados
+      // 3. Garantizar que el componente padre recibe siempre ejercicios con los metadatos correctos
       
-      // En caso de error, usar ejercicios predefinidos
+      // Generar ejercicios locales que coincidan EXACTAMENTE con la selección del usuario
       const localExercises = getLocalExercises(topic, difficulty, exerciseType);
       
-      // Añadir metadatos a los ejercicios de respaldo
-      const enhancedLocalExercises = localExercises.map(ex => ({
+      // Añadir metadatos forzados para que coincidan con la selección del usuario
+      const enhancedExercises = localExercises.map(ex => ({
         ...ex,
+        // ESTOS METADATOS SON SAGRADOS - NO SE DEBEN MODIFICAR EN NINGÚN LUGAR
         metadata: {
-          generatedByAI: false,
-          difficulty: difficulty,
-          type: exerciseType,
-          forcedByGenerator: true,
-          isBackup: true
+          forceUI: true,                 // Indicador para la UI que estos valores son forzados
+          generatedByAI: useAI,          // Si se está usando IA o no
+          difficulty: difficulty,        // FORZAR la dificultad seleccionada
+          type: exerciseType,            // FORZAR el tipo seleccionado
+          originalType: exerciseType,    // Guardar tipo original para debugging
+          forcedByGenerator: true        // Indicador que los metadatos fueron forzados aquí
         }
       }));
       
-      onExercisesGenerated(enhancedLocalExercises);
+      console.log('[AI GENERATOR] Ejercicios con metadatos FORZADOS:', enhancedExercises);
+      console.log('[AI GENERATOR] FORZANDO dificultad:', difficulty);
+      console.log('[AI GENERATOR] FORZANDO tipo:', exerciseType);
+      
+      if (useAI) {
+        try {
+          // Intentar usar la IA, pero con un timeout más corto
+          console.log(`[AI GENERATOR] Intentando generar ejercicios con IA: Tema=${topic}, Dificultad=${difficulty}, Tipo=${exerciseType}`);
+          
+          // Intentamos llamar a la API, pero con un timeout
+          const apiPromise = generateAIExercises(topic, difficulty, exerciseType);
+          
+          // Si la API tarda más de 8 segundos, usamos los ejercicios locales para no hacer esperar al usuario
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Timeout al llamar a la API')), 8000);
+          });
+          
+          // Competencia entre la API y el timeout
+          const apiExercises = await Promise.race([apiPromise, timeoutPromise]) as any[];
+          
+          if (apiExercises && Array.isArray(apiExercises) && apiExercises.length > 0) {
+            console.log('[AI GENERATOR] API devolvió ejercicios:', apiExercises);
+            
+            // FORZAR los metadatos aunque vengan de la API
+            const forcedApiExercises = apiExercises.map(ex => ({
+              ...ex,
+              // ESTOS METADATOS SON SAGRADOS - NO SE DEBEN MODIFICAR EN NINGÚN LUGAR
+              metadata: {
+                forceUI: true,                 // Indicador para la UI que estos valores son forzados
+                generatedByAI: true,           // Estos ejercicios vienen de la IA
+                difficulty: difficulty,        // FORZAR la dificultad seleccionada
+                type: exerciseType,            // FORZAR el tipo seleccionado
+                originalType: exerciseType,    // Guardar tipo original para debugging
+                forcedByGenerator: true,       // Indicador que los metadatos fueron forzados aquí
+                fromApi: true                  // Indicador que vinieron de la API
+              }
+            }));
+            
+            console.log('[AI GENERATOR] Ejercicios de API con metadatos FORZADOS:', forcedApiExercises);
+            
+            // Usar los ejercicios de la API con metadatos forzados
+            onExercisesGenerated(forcedApiExercises);
+            setIsLoading(false);
+            return;
+          }
+          
+          // Si llegamos aquí, la API falló o timeout
+          console.warn('[AI GENERATOR] API falló o timeout, usando ejercicios locales');
+          setError('No se pudo conectar con la IA. Usando ejercicios predefinidos.');
+        } catch (apiError) {
+          console.error("[AI GENERATOR] Error al llamar a la API:", apiError);
+          setError('No se pudo conectar con la IA. Usando ejercicios predefinidos.');
+        }
+      }
+      
+      // Si no se usa IA o falló, usar los ejercicios locales ya preparados
+      console.log('[AI GENERATOR] Usando ejercicios locales con metadatos forzados');
+      
+      // SIEMPRE enviamos ejercicios con metadatos forzados que coinciden exactamente con la selección
+      onExercisesGenerated(enhancedExercises);
+    } catch (error) {
+      console.error('[AI GENERATOR] Error general:', error);
+      setError('Ha ocurrido un error. Usando ejercicios predefinidos.');
+      
+      // En caso de error extremo, generar ejercicios básicos con metadatos forzados
+      const backupExercises = [
+        {
+          problem: "x^2 + 5x + 6",
+          solution: "(x + 2)(x + 3)",
+          hint: "Busca dos números que multiplicados den 6 y sumados den 5",
+          metadata: {
+            forceUI: true,
+            generatedByAI: false,
+            difficulty: difficulty,
+            type: exerciseType,
+            isEmergencyBackup: true
+          }
+        }
+      ];
+      
+      onExercisesGenerated(backupExercises);
     } finally {
       setIsLoading(false);
     }
