@@ -2,6 +2,18 @@
 
 import axios from 'axios';
 
+// Logs de debugging mejorados
+const logDebug = (message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] 🔌 API_CONFIG: ${message}`);
+  if (data) console.log(data);
+};
+
+const logError = (message: string, error: any) => {
+  const timestamp = new Date().toISOString();
+  console.error(`[${timestamp}] ❌ API_ERROR: ${message}`, error);
+};
+
 // NUEVO: Guardar las últimas selecciones del usuario
 let lastUserSelections = {
   difficulty: '',
@@ -15,6 +27,8 @@ export const generateAIExercises = async (
   difficulty: 'easy' | 'medium' | 'hard',
   type?: string
 ) => {
+  logDebug(`⭐ INICIANDO LLAMADA A API para ${topic}, dificultad=${difficulty}, tipo=${type || "no especificado"}`);
+  
   try {
     // NUEVO: Almacenar selecciones del usuario
     lastUserSelections = {
@@ -26,15 +40,14 @@ export const generateAIExercises = async (
     // Guardar en localStorage inmediatamente para recuperación en caso de error
     localStorage.setItem('last_api_request', JSON.stringify(lastUserSelections));
     
-    console.log(`🔐 API REQUEST - SELECCIONES DEL USUARIO: Dificultad=${difficulty}, Tipo=${type}`);
+    logDebug(`🔐 API REQUEST - SELECCIONES DEL USUARIO: Dificultad=${difficulty}, Tipo=${type}`);
     
     // Usamos la función de Firebase para evitar problemas de CORS
     const functionUrl = window.location.hostname === 'localhost' 
       ? 'http://localhost:5001/math-basis/us-central1/deepseekProxy' 
       : 'https://us-central1-math-basis.cloudfunctions.net/deepseekProxy';
     
-    console.log(`Llamando a la función de Firebase: ${functionUrl}`);
-    console.log('Parámetros:', { topic, difficulty, type });
+    logDebug(`Llamando a la función de Firebase: ${functionUrl}`);
     
     // Agregamos un timestamp para evitar cachés
     const requestData = {
@@ -46,6 +59,8 @@ export const generateAIExercises = async (
       requestId: Math.random().toString(36).substring(2, 15) // ID único para esta solicitud
     };
     
+    logDebug("📤 Enviando solicitud con datos:", requestData);
+    
     const response = await axios.post(
       functionUrl,
       requestData,
@@ -56,21 +71,23 @@ export const generateAIExercises = async (
           'X-Force-Type': type || '', // NUEVO: Indicador explícito en headers
           'X-Request-ID': requestData.requestId // NUEVO: ID de seguimiento
         },
-        timeout: 15000 // 15 segundos máximo
+        timeout: 30000 // 30 segundos máximo
       }
     );
     
-    console.log('Respuesta completa:', response);
+    logDebug(`📥 Respuesta recibida con status: ${response.status}`);
     
     if (response.data && response.data.success && response.data.exercises) {
-      console.log("Ejercicios recibidos:", response.data.exercises);
+      logDebug(`✅ Ejercicios recibidos: ${response.data.exercises.length}`);
       
       // SOLUCIÓN EXTREMA: Ignorar completamente los metadatos del API
       // y sobreescribirlos con lo que el usuario seleccionó
-      const forcedExercises = response.data.exercises.map((exercise: any) => {
+      const forcedExercises = response.data.exercises.map((exercise: any, index: number) => {
+        logDebug(`Procesando ejercicio #${index+1}`);
+        
         // Comprobar si los contenidos son válidos
         if (!exercise.problem || !exercise.solution) {
-          console.error("⚠️ Ejercicio inválido recibido del API:", exercise);
+          logError(`Ejercicio #${index+1} inválido recibido del API:`, exercise);
           // Crear un ejercicio de respaldo
           return {
             problem: "x^2 + 5x + 6",
@@ -111,7 +128,7 @@ export const generateAIExercises = async (
         };
       });
       
-      console.log("🔐 Ejercicios con dificultad y tipo FORZADOS:", forcedExercises);
+      logDebug("🔐 Ejercicios con dificultad y tipo FORZADOS:", forcedExercises.length);
       
       // NUEVO: Guardar respuesta para debugging/recuperación
       localStorage.setItem('last_api_response', JSON.stringify({
@@ -121,15 +138,17 @@ export const generateAIExercises = async (
         exercises: forcedExercises
       }));
       
+      logDebug("✅✅✅ API EJECUTADA CON ÉXITO - RETORNANDO EJERCICIOS ✅✅✅");
       return forcedExercises;
     } else {
-      console.error("Respuesta inválida de la función:", response.data);
+      logError("Respuesta inválida de la función:", response.data);
       throw new Error('No se recibieron ejercicios válidos');
     }
   } catch (error) {
-    console.error("Error al llamar a la función de Firebase:", error);
+    logError("Error al llamar a la función de Firebase:", error);
+    
     if (axios.isAxiosError(error)) {
-      console.error('Detalles del error de Axios:', {
+      logError('Detalles del error de Axios:', {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
@@ -145,6 +164,8 @@ export const generateAIExercises = async (
     }));
     
     // En caso de error, devolvemos ejercicios predefinidos según el tipo
+    logDebug("⚠️ Generando ejercicios de respaldo debido al error");
+    
     const backupExercises = generateBackupExercises(topic, difficulty, type);
     
     // Añadir metadatos a los ejercicios de respaldo

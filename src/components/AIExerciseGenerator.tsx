@@ -732,61 +732,30 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
       setForceUI(true);
 
       console.log("🔒 INICIANDO GENERACIÓN CON TIPO:", exerciseType, "Y DIFICULTAD:", difficulty);
-      
-      // Restaurando la lógica original pero manteniendo los fixes de display
-      
-      // Generar ejercicios locales que coincidan con la selección del usuario (como respaldo)
-      const localExercises = getLocalExercises(topic, difficulty, exerciseType);
-      
-      // Añadir metadatos y displayType/displayDifficulty correctos
-      const enhancedExercises = localExercises.map(ex => {
-        // Determinar el displayType correcto
-        let displayType = "";
-        if (topic === 'rationalfractions') {
-          if (exerciseType === 'basic') displayType = "Fracciones básicas";
-          else if (exerciseType === 'simplification') displayType = "Simplificación de fracciones racionales";
-          else if (exerciseType === 'addition_subtraction') displayType = "Suma y resta de fracciones racionales";
-          else if (exerciseType === 'multiplication_division') displayType = "Multiplicación y división de fracciones racionales";
-          else if (exerciseType === 'complex_operations') displayType = "Operaciones complejas con fracciones racionales";
-          else displayType = "Fracciones básicas";
-        } else {
-          displayType = "Factorización";
-        }
-        
-        // Determinar la displayDifficulty correcta
-        const displayDifficulty = difficulty === 'easy' ? "Fácil" : 
-                                difficulty === 'medium' ? "Medio" : "Difícil";
-        
-        return {
-          ...ex,
-          // Agregar display properties
-          displayType: displayType,
-          displayDifficulty: displayDifficulty,
-          // Metadatos
-          metadata: {
-            forceUI: true,
-            generatedByAI: false,
-            difficulty: difficulty,
-            type: exerciseType,
-            originalType: exerciseType,
-            forcedByGenerator: true,
-            timestamp: new Date().getTime()
-          }
-        };
-      });
+      console.log("🔍 ¿Usar IA?:", useAI ? "SÍ" : "NO");
       
       // Si useAI es true, intentar usar la API
       if (useAI) {
         try {
-          // Llamar a la API
-          console.log(`🔒 Intentando generar ejercicios con IA: Tema=${topic}, Dificultad=${difficulty}, Tipo=${exerciseType}`);
+          // Llamar a la API - ESTE ES EL PUNTO IMPORTANTE
+          console.log(`🚀 LLAMANDO A LA API: Tema=${topic}, Dificultad=${difficulty}, Tipo=${exerciseType}`);
           
-          // Llamada a la API
-          const apiExercises = await generateAIExercises(topic, difficulty, exerciseType);
+          // Llamada a la API con timeout de 30 segundos para dar tiempo suficiente
+          const apiPromise = generateAIExercises(topic, difficulty, exerciseType);
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout al llamar a la API después de 30 segundos')), 30000)
+          );
+          
+          // Log para debugging
+          console.log("⏱️ Esperando respuesta de API con timeout de 30 segundos...");
+          
+          // Race entre la API y el timeout
+          const apiExercises = await Promise.race([apiPromise, timeoutPromise]) as any[];
+          
+          // Si llegamos aquí, la API respondió antes del timeout
+          console.log('✅ API RESPONDIÓ:', apiExercises ? `Con ${apiExercises.length} ejercicios` : 'Sin ejercicios');
           
           if (apiExercises && Array.isArray(apiExercises) && apiExercises.length > 0) {
-            console.log('🔒 API devolvió ejercicios:', apiExercises);
-            
             // Procesar ejercicios de la API, añadiendo displayType y displayDifficulty
             const processedApiExercises = apiExercises.map(ex => {
               // Determinar el displayType correcto
@@ -827,30 +796,90 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
               };
             });
             
+            // Log de los ejercicios procesados
+            console.log('🎯 Ejercicios de API procesados y listos para enviar:', processedApiExercises);
+            
+            // Guardar en localStorage para verificación posterior
+            try {
+              localStorage.setItem('last_api_success', JSON.stringify({
+                timestamp: new Date().toString(),
+                count: processedApiExercises.length,
+                difficulty: difficulty,
+                type: exerciseType,
+                firstExerciseProblem: processedApiExercises[0].problem.substring(0, 50)
+              }));
+            } catch (e) {
+              console.error("Error guardando en localStorage:", e);
+            }
+            
             // Usar los ejercicios de la API
             onExercisesGenerated(processedApiExercises);
             setIsLoading(false);
+            
+            // Mostrar mensaje de éxito
+            console.log("✅✅✅ EJERCICIOS GENERADOS EXITOSAMENTE CON LA API ✅✅✅");
             return;
+          } else {
+            // API devolvió respuesta pero sin ejercicios válidos
+            throw new Error('La API no devolvió ejercicios válidos');
           }
-          
-          // Si llegamos aquí, la API falló o devolvió datos incorrectos
-          console.warn('⚠️ API falló o devolvió datos incorrectos, usando ejercicios locales');
-          setError('No se pudo obtener ejercicios de la IA. Usando ejercicios predefinidos.');
         } catch (apiError) {
-          console.error("⚠️ Error al llamar a la API:", apiError);
-          setError('Error al conectar con la IA. Usando ejercicios predefinidos.');
+          console.error("❌ ERROR AL LLAMAR A LA API:", apiError);
+          setError(`Error al conectar con la IA: ${apiError instanceof Error ? apiError.message : 'Error desconocido'}. Usando ejercicios predefinidos.`);
         }
+      } else {
+        console.log("ℹ️ No se usa IA - generando ejercicios locales");
       }
       
-      // Si no se usa IA o falló, usar los ejercicios locales
-      console.log('🔒 Usando ejercicios locales con display correcto');
+      // Si llegamos aquí, no se usó IA o falló, usar ejercicios locales
+      console.log('🔒 Generando ejercicios locales con display correcto');
+      
+      // Generar ejercicios locales que coincidan con la selección
+      const localExercises = getLocalExercises(topic, difficulty, exerciseType);
+      
+      // Añadir metadatos y displayType/displayDifficulty correctos
+      const enhancedExercises = localExercises.map(ex => {
+        // Determinar el displayType correcto
+        let displayType = "";
+        if (topic === 'rationalfractions') {
+          if (exerciseType === 'basic') displayType = "Fracciones básicas";
+          else if (exerciseType === 'simplification') displayType = "Simplificación de fracciones racionales";
+          else if (exerciseType === 'addition_subtraction') displayType = "Suma y resta de fracciones racionales";
+          else if (exerciseType === 'multiplication_division') displayType = "Multiplicación y división de fracciones racionales";
+          else if (exerciseType === 'complex_operations') displayType = "Operaciones complejas con fracciones racionales";
+          else displayType = "Fracciones básicas";
+        } else {
+          displayType = "Factorización";
+        }
+        
+        // Determinar la displayDifficulty correcta
+        const displayDifficulty = difficulty === 'easy' ? "Fácil" : 
+                                difficulty === 'medium' ? "Medio" : "Difícil";
+        
+        return {
+          ...ex,
+          // Agregar display properties
+          displayType: displayType,
+          displayDifficulty: displayDifficulty,
+          // Metadatos
+          metadata: {
+            forceUI: true,
+            generatedByAI: false,
+            difficulty: difficulty,
+            type: exerciseType,
+            originalType: exerciseType,
+            forcedByGenerator: true,
+            timestamp: new Date().getTime()
+          }
+        };
+      });
       
       // Entregar ejercicios locales
       onExercisesGenerated(enhancedExercises);
       
     } catch (error) {
       console.error('⚠️ Error general:', error);
-      setError('Ha ocurrido un error. Usando ejercicios predefinidos.');
+      setError(`Error general: ${error instanceof Error ? error.message : 'Error desconocido'}. Usando ejercicios predefinidos.`);
       
       // Obtener un ejercicio de respaldo con el display correcto
       const backupExercise = getGuaranteedExercise(topic, difficulty, exerciseType);
