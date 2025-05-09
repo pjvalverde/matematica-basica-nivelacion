@@ -247,8 +247,8 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     // Esta función se ejecutará cada vez que cambien exerciseType o difficulty
     const applyForceUIOverride = () => {
       console.log("⚠️ FORZANDO LA UI para mostrar:", {
-        difficulty: difficulty,
-        exerciseType: exerciseType
+        difficulty: currentExercise && currentExercise.displayDifficulty ? currentExercise.displayDifficulty : difficulty,
+        exerciseType: currentExercise && currentExercise.displayType ? currentExercise.displayType : exerciseType
       });
 
       setTimeout(() => {
@@ -259,36 +259,23 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
             for (let i = 0; i < typeElements.length; i++) {
               const element = typeElements[i] as HTMLElement;
               
-              // Determinar el texto correcto según el tipo seleccionado
-              let typeText = "";
-              switch (exerciseType) {
-                case ExerciseType.BASIC:
-                  typeText = "Fracciones básicas";
-                  element.className = "exercise-type type-basic";
-                  break;
-                case ExerciseType.SIMPLIFICATION:
-                  typeText = "Simplificación de fracciones racionales";
-                  element.className = "exercise-type type-simplification";
-                  break;
-                case ExerciseType.ADDITION_SUBTRACTION:
-                  typeText = "Suma y resta de fracciones racionales";
-                  element.className = "exercise-type type-addition";
-                  break;
-                case ExerciseType.MULTIPLICATION_DIVISION:
-                  typeText = "Multiplicación y división de fracciones racionales";
-                  element.className = "exercise-type type-multiplication";
-                  break;
-                case ExerciseType.COMPLEX_OPERATIONS:
-                  typeText = "Operaciones complejas con fracciones racionales";
-                  element.className = "exercise-type type-complex";
-                  break;
-                case ExerciseType.BUSINESS_APPLICATION:
-                  typeText = "Aplicaciones a finanzas y negocios";
-                  element.className = "exercise-type type-business";
-                  break;
-              }
+              // Determinar el texto correcto según el tipo seleccionado, priorizando currentExercise
+              let typeText = (currentExercise && currentExercise.displayType)
+                ? currentExercise.displayType
+                : getExerciseTypeName(exerciseType);
               
-              // Asignar el texto correcto
+              // Determinar la clase CSS correcta
+              let typeClass = "type-basic"; // Default class
+              const typeSource = currentExercise ? currentExercise.type : exerciseType;
+              switch (typeSource) {
+                case ExerciseType.BASIC: typeClass = "type-basic"; break;
+                case ExerciseType.SIMPLIFICATION: typeClass = "type-simplification"; break;
+                case ExerciseType.ADDITION_SUBTRACTION: typeClass = "type-addition"; break;
+                case ExerciseType.MULTIPLICATION_DIVISION: typeClass = "type-multiplication"; break;
+                case ExerciseType.COMPLEX_OPERATIONS: typeClass = "type-complex"; break;
+                case ExerciseType.BUSINESS_APPLICATION: typeClass = "type-business"; break;
+              }
+              element.className = `exercise-type ${typeClass}`;
               element.innerHTML = typeText;
               element.style.fontWeight = "bold";
             }
@@ -300,24 +287,21 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
             for (let i = 0; i < difficultyElements.length; i++) {
               const element = difficultyElements[i] as HTMLElement;
               
-              // Determinar el texto correcto según la dificultad seleccionada
-              let difficultyText = "";
-              switch (difficulty) {
-                case DifficultyLevel.EASY:
-                  difficultyText = "Fácil";
-                  element.className = "exercise-difficulty difficulty-easy";
-                  break;
-                case DifficultyLevel.MEDIUM:
-                  difficultyText = "Medio";
-                  element.className = "exercise-difficulty difficulty-medium";
-                  break;
-                case DifficultyLevel.HARD:
-                  difficultyText = "Difícil";
-                  element.className = "exercise-difficulty difficulty-hard";
-                  break;
+              // Determinar el texto correcto según la dificultad seleccionada, priorizando currentExercise
+              let difficultyText = (currentExercise && currentExercise.displayDifficulty)
+                ? currentExercise.displayDifficulty
+                : difficulty === DifficultyLevel.EASY ? "Fácil" :
+                  difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
+
+              // Determinar la clase CSS correcta
+              let difficultyClass = "difficulty-easy"; // Default class
+              const difficultySource = currentExercise ? currentExercise.difficulty : difficulty;
+              switch (difficultySource) {
+                case DifficultyLevel.EASY: difficultyClass = "difficulty-easy"; break;
+                case DifficultyLevel.MEDIUM: difficultyClass = "difficulty-medium"; break;
+                case DifficultyLevel.HARD: difficultyClass = "difficulty-hard"; break;
               }
-              
-              // Asignar el texto correcto
+              element.className = `exercise-difficulty ${difficultyClass}`;
               element.innerHTML = difficultyText;
               element.style.fontWeight = "bold";
             }
@@ -329,9 +313,16 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
             for (let i = 0; i < pointsElements.length; i++) {
               const element = pointsElements[i] as HTMLElement;
               
-              // Determinar los puntos según la dificultad
-              const points = difficulty === DifficultyLevel.EASY ? 1 :
-                            difficulty === DifficultyLevel.MEDIUM ? 2 : 3;
+              // Determinar los puntos según la dificultad, priorizando currentExercise.difficulty
+              let points = 1;
+              const currentExerciseDiffEnum = currentExercise ? currentExercise.difficulty : null;
+              if (currentExerciseDiffEnum) {
+                points = currentExerciseDiffEnum === DifficultyLevel.EASY ? 1 :
+                         currentExerciseDiffEnum === DifficultyLevel.MEDIUM ? 2 : 3;
+              } else { // Fallback to component's state
+                points = difficulty === DifficultyLevel.EASY ? 1 :
+                         difficulty === DifficultyLevel.MEDIUM ? 2 : 3;
+              }
               
               // Asignar el texto correcto
               element.innerHTML = `Valor: ${points} ${points === 1 ? 'moneda' : 'monedas'}`;
@@ -414,15 +405,32 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     
     // Función para forzar UI cuando se detecten cambios
     const guardUI = () => {
-      // Convertir las selecciones del usuario a textos UI
-      const difficultyText = difficulty === DifficultyLevel.EASY ? "Fácil" :
-                          difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
+      // Convertir las selecciones del usuario a textos UI, priorizando currentExercise
+      const typeText = (currentExercise && currentExercise.displayType)
+        ? currentExercise.displayType
+        : getExerciseTypeName(exerciseType);
+
+      const difficultyText = (currentExercise && currentExercise.displayDifficulty)
+        ? currentExercise.displayDifficulty
+        : difficulty === DifficultyLevel.EASY ? "Fácil" :
+          difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
       
-      const typeText = getExerciseTypeName(exerciseType);
-      
+      // Determinar los puntos, priorizando currentExercise.difficulty
+      let pointsValue = 1;
+      const currentExerciseDiffEnumGuard = currentExercise ? currentExercise.difficulty : null;
+      if (currentExerciseDiffEnumGuard) {
+        pointsValue = currentExerciseDiffEnumGuard === DifficultyLevel.EASY ? 1 :
+                      currentExerciseDiffEnumGuard === DifficultyLevel.MEDIUM ? 2 : 3;
+      } else { // Fallback to component's state
+        pointsValue = difficulty === DifficultyLevel.EASY ? 1 :
+                      difficulty === DifficultyLevel.MEDIUM ? 2 : 3;
+      }
+      const pointsText = `Valor: ${pointsValue} ${pointsValue === 1 ? 'moneda' : 'monedas'}`;
+
       // Detectar elementos UI que no coincidan con las selecciones
       const typeElements = document.getElementsByClassName('exercise-type');
       const difficultyElements = document.getElementsByClassName('exercise-difficulty');
+      const pointsElements = document.getElementsByClassName('exercise-points');
       
       // Corregir elementos de tipo si no coinciden
       if (typeElements.length > 0) {
@@ -432,27 +440,18 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
             console.log(`🛡️ CORRIGIENDO tipo de UI: "${el.innerText}" → "${typeText}"`);
             el.innerText = typeText;
             
-            // Añadir estilos visuales según el tipo
-            switch (exerciseType) {
-              case ExerciseType.BASIC:
-                el.className = "exercise-type type-basic";
-                break;
-              case ExerciseType.SIMPLIFICATION:
-                el.className = "exercise-type type-simplification";
-                break;
-              case ExerciseType.ADDITION_SUBTRACTION:
-                el.className = "exercise-type type-addition";
-                break;
-              case ExerciseType.MULTIPLICATION_DIVISION:
-                el.className = "exercise-type type-multiplication";
-                break;
-              case ExerciseType.COMPLEX_OPERATIONS:
-                el.className = "exercise-type type-complex";
-                break;
-              case ExerciseType.BUSINESS_APPLICATION:
-                el.className = "exercise-type type-business";
-                break;
+            // Añadir estilos visuales según el tipo (fuente de verdad: currentExercise o fallback)
+            let typeClass = "type-basic";
+            const typeSource = currentExercise ? currentExercise.type : exerciseType;
+            switch (typeSource) {
+              case ExerciseType.BASIC: typeClass = "type-basic"; break;
+              case ExerciseType.SIMPLIFICATION: typeClass = "type-simplification"; break;
+              case ExerciseType.ADDITION_SUBTRACTION: typeClass = "type-addition"; break;
+              case ExerciseType.MULTIPLICATION_DIVISION: typeClass = "type-multiplication"; break;
+              case ExerciseType.COMPLEX_OPERATIONS: typeClass = "type-complex"; break;
+              case ExerciseType.BUSINESS_APPLICATION: typeClass = "type-business"; break;
             }
+            el.className = `exercise-type ${typeClass}`;
           }
         }
       }
@@ -465,29 +464,21 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
             console.log(`🛡️ CORRIGIENDO dificultad de UI: "${el.innerText}" → "${difficultyText}"`);
             el.innerText = difficultyText;
             
-            // Añadir estilos visuales según la dificultad
-            switch (difficulty) {
-              case DifficultyLevel.EASY:
-                el.className = "exercise-difficulty difficulty-easy";
-                break;
-              case DifficultyLevel.MEDIUM:
-                el.className = "exercise-difficulty difficulty-medium";
-                break;
-              case DifficultyLevel.HARD:
-                el.className = "exercise-difficulty difficulty-hard";
-                break;
+            // Añadir estilos visuales según la dificultad (fuente de verdad: currentExercise o fallback)
+            let difficultyClass = "difficulty-easy";
+            const difficultySource = currentExercise ? currentExercise.difficulty : difficulty;
+            switch (difficultySource) {
+              case DifficultyLevel.EASY: difficultyClass = "difficulty-easy"; break;
+              case DifficultyLevel.MEDIUM: difficultyClass = "difficulty-medium"; break;
+              case DifficultyLevel.HARD: difficultyClass = "difficulty-hard"; break;
             }
+            el.className = `exercise-difficulty ${difficultyClass}`;
           }
         }
       }
       
       // También verificar puntos
-      const pointsElements = document.getElementsByClassName('exercise-points');
       if (pointsElements.length > 0) {
-        const points = difficulty === DifficultyLevel.EASY ? 1 :
-                    difficulty === DifficultyLevel.MEDIUM ? 2 : 3;
-        const pointsText = `Valor: ${points} ${points === 1 ? 'moneda' : 'monedas'}`;
-        
         for (let i = 0; i < pointsElements.length; i++) {
           const el = pointsElements[i] as HTMLElement;
           if (el.innerText !== pointsText) {
