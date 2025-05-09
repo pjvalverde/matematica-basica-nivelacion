@@ -733,60 +733,152 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
 
       console.log("🔒 INICIANDO GENERACIÓN CON TIPO:", exerciseType, "Y DIFICULTAD:", difficulty);
       
-      // NUEVA ESTRATEGIA: SIEMPRE usar ejercicios garantizados para toda combinación
-      console.log("🔥 USANDO EJERCICIO GARANTIZADO PARA CUALQUIER SELECCIÓN");
+      // Restaurando la lógica original pero manteniendo los fixes de display
       
-      const guaranteedExercise = getGuaranteedExercise(topic, difficulty, exerciseType);
+      // Generar ejercicios locales que coincidan con la selección del usuario (como respaldo)
+      const localExercises = getLocalExercises(topic, difficulty, exerciseType);
       
-      // Crear array con el ejercicio garantizado
-      const forcedExercises = [
-        {
-          ...guaranteedExercise,
-          // Agregar las propiedades internas necesarias
-          type: exerciseType,
-          difficulty: difficulty,
-          // Usar los valores exactos de display para la UI
-          displayType: guaranteedExercise.displayType, 
-          displayDifficulty: guaranteedExercise.displayDifficulty,
-          // Metadatos para debugging
+      // Añadir metadatos y displayType/displayDifficulty correctos
+      const enhancedExercises = localExercises.map(ex => {
+        // Determinar el displayType correcto
+        let displayType = "";
+        if (topic === 'rationalfractions') {
+          if (exerciseType === 'basic') displayType = "Fracciones básicas";
+          else if (exerciseType === 'simplification') displayType = "Simplificación de fracciones racionales";
+          else if (exerciseType === 'addition_subtraction') displayType = "Suma y resta de fracciones racionales";
+          else if (exerciseType === 'multiplication_division') displayType = "Multiplicación y división de fracciones racionales";
+          else if (exerciseType === 'complex_operations') displayType = "Operaciones complejas con fracciones racionales";
+          else displayType = "Fracciones básicas";
+        } else {
+          displayType = "Factorización";
+        }
+        
+        // Determinar la displayDifficulty correcta
+        const displayDifficulty = difficulty === 'easy' ? "Fácil" : 
+                                difficulty === 'medium' ? "Medio" : "Difícil";
+        
+        return {
+          ...ex,
+          // Agregar display properties
+          displayType: displayType,
+          displayDifficulty: displayDifficulty,
+          // Metadatos
           metadata: {
             forceUI: true,
-            generatedByAI: useAI,
+            generatedByAI: false,
             difficulty: difficulty,
             type: exerciseType,
-            isGuaranteed: true,
+            originalType: exerciseType,
+            forcedByGenerator: true,
             timestamp: new Date().getTime()
-          },
-          difficultyOverride: difficulty,
-          typeOverride: exerciseType
+          }
+        };
+      });
+      
+      // Si useAI es true, intentar usar la API
+      if (useAI) {
+        try {
+          // Llamar a la API
+          console.log(`🔒 Intentando generar ejercicios con IA: Tema=${topic}, Dificultad=${difficulty}, Tipo=${exerciseType}`);
+          
+          // Llamada a la API
+          const apiExercises = await generateAIExercises(topic, difficulty, exerciseType);
+          
+          if (apiExercises && Array.isArray(apiExercises) && apiExercises.length > 0) {
+            console.log('🔒 API devolvió ejercicios:', apiExercises);
+            
+            // Procesar ejercicios de la API, añadiendo displayType y displayDifficulty
+            const processedApiExercises = apiExercises.map(ex => {
+              // Determinar el displayType correcto
+              let displayType = "";
+              if (topic === 'rationalfractions') {
+                if (exerciseType === 'basic') displayType = "Fracciones básicas";
+                else if (exerciseType === 'simplification') displayType = "Simplificación de fracciones racionales";
+                else if (exerciseType === 'addition_subtraction') displayType = "Suma y resta de fracciones racionales";
+                else if (exerciseType === 'multiplication_division') displayType = "Multiplicación y división de fracciones racionales";
+                else if (exerciseType === 'complex_operations') displayType = "Operaciones complejas con fracciones racionales";
+                else displayType = "Fracciones básicas";
+              } else {
+                displayType = "Factorización";
+              }
+              
+              // Determinar la displayDifficulty correcta
+              const displayDifficulty = difficulty === 'easy' ? "Fácil" : 
+                                      difficulty === 'medium' ? "Medio" : "Difícil";
+              
+              return {
+                ...ex,
+                // Asegurarnos que tengamos display properties correctas
+                displayType: displayType,
+                displayDifficulty: displayDifficulty,
+                // También garantizar que type y difficulty sean correctos
+                type: exerciseType,
+                difficulty: difficulty,
+                // Metadatos
+                metadata: {
+                  forceUI: true,
+                  generatedByAI: true,
+                  difficulty: difficulty,
+                  type: exerciseType,
+                  forcedByGenerator: false,
+                  fromApi: true,
+                  timestamp: new Date().getTime()
+                }
+              };
+            });
+            
+            // Usar los ejercicios de la API
+            onExercisesGenerated(processedApiExercises);
+            setIsLoading(false);
+            return;
+          }
+          
+          // Si llegamos aquí, la API falló o devolvió datos incorrectos
+          console.warn('⚠️ API falló o devolvió datos incorrectos, usando ejercicios locales');
+          setError('No se pudo obtener ejercicios de la IA. Usando ejercicios predefinidos.');
+        } catch (apiError) {
+          console.error("⚠️ Error al llamar a la API:", apiError);
+          setError('Error al conectar con la IA. Usando ejercicios predefinidos.');
         }
-      ];
+      }
       
-      // Guardar en localStorage para debugging
-      localStorage.setItem('guaranteed_exercise', JSON.stringify({
-        timestamp: new Date().toString(),
-        difficulty: difficulty,
-        exerciseType: exerciseType,
-        forcedExercises: forcedExercises
-      }));
+      // Si no se usa IA o falló, usar los ejercicios locales
+      console.log('🔒 Usando ejercicios locales con display correcto');
       
-      // Entregar inmediatamente el ejercicio garantizado
-      onExercisesGenerated(forcedExercises);
-      setIsLoading(false);
-      return;
+      // Entregar ejercicios locales
+      onExercisesGenerated(enhancedExercises);
       
-      // OBSOLETO: El siguiente código ya no se ejecuta
-      // ... código previo que se eliminará ...
     } catch (error) {
       console.error('⚠️ Error general:', error);
       setError('Ha ocurrido un error. Usando ejercicios predefinidos.');
       
-      // En caso de error extremo, generar ejercicios básicos con metadatos forzados
+      // Obtener un ejercicio de respaldo con el display correcto
+      const backupExercise = getGuaranteedExercise(topic, difficulty, exerciseType);
+      
+      // Determinar el displayType correcto
+      let displayType = "";
+      if (topic === 'rationalfractions') {
+        if (exerciseType === 'basic') displayType = "Fracciones básicas";
+        else if (exerciseType === 'simplification') displayType = "Simplificación de fracciones racionales";
+        else if (exerciseType === 'addition_subtraction') displayType = "Suma y resta de fracciones racionales";
+        else if (exerciseType === 'multiplication_division') displayType = "Multiplicación y división de fracciones racionales";
+        else if (exerciseType === 'complex_operations') displayType = "Operaciones complejas con fracciones racionales";
+        else displayType = "Fracciones básicas";
+      } else {
+        displayType = "Factorización";
+      }
+      
+      // Determinar la displayDifficulty correcta
+      const displayDifficulty = difficulty === 'easy' ? "Fácil" : 
+                              difficulty === 'medium' ? "Medio" : "Difícil";
+      
       const backupExercises = [
         {
-          problem: "x^2 + 5x + 6",
-          solution: "(x + 2)(x + 3)",
-          hint: "Busca dos números que multiplicados den 6 y sumados den 5",
+          ...backupExercise,
+          displayType: displayType,
+          displayDifficulty: displayDifficulty,
+          type: exerciseType,
+          difficulty: difficulty,
           metadata: {
             forceUI: true,
             generatedByAI: false,
@@ -794,21 +886,9 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
             type: exerciseType,
             isEmergencyBackup: true,
             timestamp: new Date().getTime()
-          },
-          // NUEVO: FORZAR directamente los valores en el objeto principal
-          difficultyOverride: difficulty,
-          typeOverride: exerciseType
+          }
         }
       ];
-      
-      // NUEVO: Guardar en localStorage para debugging
-      localStorage.setItem('last_exercises_metadata', JSON.stringify({
-        timestamp: new Date().toString(),
-        difficulty: difficulty,
-        exerciseType: exerciseType,
-        forceUI: true,
-        source: 'emergency'
-      }));
       
       onExercisesGenerated(backupExercises);
     } finally {
