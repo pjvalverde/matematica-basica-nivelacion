@@ -37,8 +37,8 @@ interface Exercise {
 // Interfaz para usuario
 interface User {
   uid: string;
-  email: string;
-  displayName?: string;
+  email: string | null;
+  displayName?: string | null;
 }
 
 // Función para generar un ID único

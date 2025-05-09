@@ -1,25 +1,22 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
-// IMPORTANTE: Reemplaza esta configuración con los datos de tu proyecto Firebase
-// Puedes encontrar esta información en la consola de Firebase:
-// 1. Ve a https://console.firebase.google.com
-// 2. Selecciona tu proyecto
-// 3. Haz clic en "Configuración del proyecto" (icono de engranaje)
-// 4. En la pestaña "General", desplázate hacia abajo hasta "Tus apps" y copia los detalles
+// Configuración real de Firebase para este proyecto
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDkFaKhmgMitvCUcBSL58_IN3Y05Ry1aac",
+  authDomain: "math-basis.firebaseapp.com",
+  projectId: "math-basis",
+  storageBucket: "math-basis.firebasestorage.app",
+  appId: "1:1025897336301:web:48d29d5501b152e98b6be4",
+  measurementId: "G-HL8GZ5NCG3"
 };
 
 // Inicializar Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
-export { auth, db }; 
+export { auth, db, storage }; 

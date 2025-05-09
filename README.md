@@ -63,3 +63,47 @@ Para consultas o apoyo adicional, contacta al departamento de Matemáticas Aplic
 </div>
 
 This is a test to trigger a new workflow
+
+# Math Basics - Aplicación Educativa de Matemáticas
+
+Esta aplicación educativa está diseñada para ayudar a estudiantes a practicar factorización y otros conceptos matemáticos.
+
+## Configuración de Firebase
+
+Para configurar Firebase en este proyecto:
+
+1. Crea un proyecto en la [Consola de Firebase](https://console.firebase.google.com/)
+2. Registra una aplicación web en tu proyecto Firebase
+3. Copia las credenciales de configuración que Firebase te proporciona
+4. Crea un archivo `.env.local` en la raíz del proyecto con el siguiente contenido:
+
+```
+REACT_APP_FIREBASE_API_KEY=tu_api_key
+REACT_APP_FIREBASE_AUTH_DOMAIN=tu_auth_domain
+REACT_APP_FIREBASE_PROJECT_ID=tu_project_id
+REACT_APP_FIREBASE_STORAGE_BUCKET=tu_storage_bucket
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=tu_messaging_sender_id
+REACT_APP_FIREBASE_APP_ID=tu_app_id
+```
+
+## Ejecución del proyecto
+
+Para ejecutar el proyecto localmente:
+
+```bash
+# Instalar dependencias
+npm install
+
+# Iniciar el servidor de desarrollo
+npm start
+```
+
+La aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
+
+## Funcionalidades
+
+- Ejercicios de factorización con diferentes niveles de dificultad
+- Sistema de puntaje con monedas
+- Tabla de clasificación para competir con otros estudiantes
+- Autenticación de usuarios
+- Ejercicios basados en PDF para una experiencia educativa más completa

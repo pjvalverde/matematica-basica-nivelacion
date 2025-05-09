@@ -5,12 +5,13 @@ import Footer from './components/Footer';
 import Login from './components/Login';
 import Register from './components/Register';
 import FactorizationExercises from './components/FactorizationExercises';
+import RationalFractionsExercises from './components/RationalFractionsExercises';
 import Leaderboard from './components/Leaderboard';
 import { registerUser, loginUser, logoutUser, getCurrentUser, onUserChange } from './firebase/authService';
 import { User } from 'firebase/auth';
 
 // Tipo para las secciones disponibles en la aplicación
-type SectionType = 'login' | 'register' | 'exercises' | 'leaderboard';
+type SectionType = 'login' | 'register' | 'exercises' | 'rationalfractions' | 'leaderboard';
 
 const App: FC = () => {
   const [selectedSection, setSelectedSection] = useState<SectionType>('login');
@@ -118,6 +119,10 @@ const App: FC = () => {
         
         {user && selectedSection === 'exercises' && (
           <FactorizationExercises user={user} />
+        )}
+        
+        {user && selectedSection === 'rationalfractions' && (
+          <RationalFractionsExercises user={user} />
         )}
         
         {user && selectedSection === 'leaderboard' && (
