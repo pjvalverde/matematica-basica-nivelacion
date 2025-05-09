@@ -15,33 +15,71 @@ export const generateAIExercises = async (
       : 'https://us-central1-math-basis.cloudfunctions.net/deepseekProxy';
     
     console.log(`Llamando a la función de Firebase: ${functionUrl}`);
+    console.log('Parámetros:', { topic, difficulty, type });
+    
+    // Agregamos un timestamp para evitar cachés
+    const requestData = {
+      topic,
+      difficulty,
+      type,
+      timestamp: new Date().getTime()
+    };
     
     const response = await axios.post(
       functionUrl,
-      {
-        topic,
-        difficulty,
-        type
-      },
+      requestData,
       {
         headers: {
           'Content-Type': 'application/json'
         },
-        timeout: 20000 // Ampliamos el tiempo de espera a 20 segundos
+        timeout: 30000 // Ampliamos el tiempo de espera a 30 segundos
       }
     );
     
+    console.log('Respuesta completa:', response);
+    
     if (response.data && response.data.success && response.data.exercises) {
       console.log("Ejercicios recibidos:", response.data.exercises);
-      return response.data.exercises;
+      
+      // Asegúrate de que cada ejercicio tenga los metadatos correctos
+      const enhancedExercises = response.data.exercises.map((exercise: any) => ({
+        ...exercise,
+        metadata: {
+          ...(exercise.metadata || {}), // Mantener otros metadatos si existen
+          generatedByAI: true,
+          difficulty: difficulty,
+          type: type || ""
+        }
+      }));
+      
+      return enhancedExercises;
     } else {
       console.error("Respuesta inválida de la función:", response.data);
       throw new Error('No se recibieron ejercicios válidos');
     }
   } catch (error) {
     console.error("Error al llamar a la función de Firebase:", error);
+    if (axios.isAxiosError(error)) {
+      console.error('Detalles del error de Axios:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
+    }
+    
     // En caso de error, devolvemos ejercicios predefinidos según el tipo
-    return generateBackupExercises(topic, difficulty, type);
+    const backupExercises = generateBackupExercises(topic, difficulty, type);
+    
+    // Añadir metadatos a los ejercicios de respaldo
+    return backupExercises.map(exercise => ({
+      ...exercise,
+      metadata: {
+        generatedByAI: false, // indicar que no son de la IA sino de respaldo
+        difficulty: difficulty,
+        type: type || ""
+      }
+    }));
   }
 };
 
@@ -51,6 +89,8 @@ function generateBackupExercises(
   difficulty: 'easy' | 'medium' | 'hard',
   type?: string
 ): any[] {
+  console.log('Generando ejercicios de respaldo para:', { topic, difficulty, type });
+  
   if (topic === 'factorization') {
     return [
       {

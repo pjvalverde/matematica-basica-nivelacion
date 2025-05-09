@@ -286,6 +286,7 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
   const [totalExercises, setTotalExercises] = useState<number>(0);
   const [aiExercises, setAiExercises] = useState<Exercise[]>([]);
   const [showAiGenerator, setShowAiGenerator] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Cargar puntos del usuario al iniciar
   useEffect(() => {
@@ -426,23 +427,78 @@ const FactorizationExercises: React.FC<FactorizationExercisesProps> = ({ user })
 
   // Manejar generación de ejercicios con IA
   const handleAIExercisesGenerated = (generatedExercises: any[]) => {
+    console.log("Recibidos ejercicios generados por IA:", generatedExercises);
+    
     // Convertir el formato de ejercicios de la IA al formato usado en este componente
-    const formattedExercises = generatedExercises.map(ex => ({
-      id: generateId(),
-      type: ExerciseType.PDF_BASED, // Usamos este tipo para ejercicios generados por IA
-      difficulty,
-      problem: ex.problem,
-      solution: ex.solution,
-      hint: ex.hint,
-      points: difficulty === DifficultyLevel.EASY ? 1 : 
-              difficulty === DifficultyLevel.MEDIUM ? 2 : 3
-    }));
+    const formattedExercises = generatedExercises.map(ex => {
+      // Valores por defecto (usados si no hay metadatos)
+      let exerciseTypeToUse = ExerciseType.PDF_BASED;
+      let difficultyToUse = difficulty;
+      
+      // Si el ejercicio tiene metadatos, usarlos para preservar la selección del usuario
+      if (ex.metadata) {
+        console.log("Ejercicio con metadatos:", ex.metadata);
+        
+        // Mapear el tipo de ejercicio según los metadatos
+        if (ex.metadata.type) {
+          if (ex.metadata.type.includes('factor común')) {
+            exerciseTypeToUse = ExerciseType.BASIC;
+            console.log("Estableciendo tipo: Factor común");
+          } else if (ex.metadata.type.includes('cuadrados') || ex.metadata.type.includes('diferencia de cuadrados')) {
+            exerciseTypeToUse = ExerciseType.DIFFERENCE_OF_SQUARES;
+            console.log("Estableciendo tipo: Diferencia de cuadrados");
+          } else if (ex.metadata.type.includes('trinomio cuadrado') || ex.metadata.type.includes('perfecto')) {
+            exerciseTypeToUse = ExerciseType.PERFECT_SQUARE_TRINOMIAL;
+            console.log("Estableciendo tipo: Trinomio cuadrado perfecto");
+          } else if (ex.metadata.type.includes('trinomio de la forma') || ex.metadata.type.includes('general')) {
+            exerciseTypeToUse = ExerciseType.GENERAL_TRINOMIAL;
+            console.log("Estableciendo tipo: Trinomio general");
+          }
+        }
+        
+        // Mapear la dificultad según los metadatos
+        if (ex.metadata.difficulty) {
+          if (ex.metadata.difficulty === 'easy') {
+            difficultyToUse = DifficultyLevel.EASY;
+            console.log("Estableciendo dificultad: Fácil");
+          } else if (ex.metadata.difficulty === 'medium') {
+            difficultyToUse = DifficultyLevel.MEDIUM;
+            console.log("Estableciendo dificultad: Medio");
+          } else if (ex.metadata.difficulty === 'hard') {
+            difficultyToUse = DifficultyLevel.HARD;
+            console.log("Estableciendo dificultad: Difícil");
+          }
+        }
+      } else {
+        console.log("Ejercicio sin metadatos, usando valores por defecto");
+      }
+      
+      // Crear el ejercicio con el formato necesario
+      return {
+        id: generateId(),
+        type: exerciseTypeToUse,
+        difficulty: difficultyToUse,
+        problem: ex.problem,
+        solution: ex.solution,
+        hint: ex.hint || "Intenta factorizar identificando el tipo de expresión.",
+        points: difficultyToUse === DifficultyLevel.EASY ? 1 : 
+                difficultyToUse === DifficultyLevel.MEDIUM ? 2 : 3
+      };
+    });
+    
+    console.log("Ejercicios formateados:", formattedExercises);
     
     setAiExercises(formattedExercises);
-    setCurrentExercise(formattedExercises[0]);
-    setUserAnswer('');
-    setShowSolution(false);
-    setIsCorrect(null);
+    
+    if (formattedExercises.length > 0) {
+      setCurrentExercise(formattedExercises[0]);
+      setUserAnswer('');
+      setShowSolution(false);
+      setIsCorrect(null);
+    } else {
+      console.error("No se recibieron ejercicios válidos de la IA");
+      setError("No se pudieron generar ejercicios con IA. Intente de nuevo.");
+    }
   };
 
   // Renderizar ejercicio actual
