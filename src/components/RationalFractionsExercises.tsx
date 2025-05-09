@@ -763,7 +763,8 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     
     if (forcedExercises.length > 0) {
       // Establecer el ejercicio actual con los valores UI forzados
-      setCurrentExercise(forcedExercises[0]);
+      const newExercise = forcedExercises[0]; // REFERENCIA AL NUEVO EJERCICIO
+      setCurrentExercise(newExercise);
       setUserAnswer('');
       setShowSolution(false);
       setIsCorrect(null);
@@ -778,22 +779,27 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
           if (typeElements.length > 0) {
             for (let i = 0; i < typeElements.length; i++) {
               const el = typeElements[i] as HTMLElement;
-              // Asignar texto según el tipo seleccionado
-              el.innerText = getExerciseTypeName(exerciseType);
+              // Asignar texto según el displayType del nuevo ejercicio, o su tipo real como fallback
+              el.innerText = newExercise.displayType || getExerciseTypeName(newExercise.type);
             }
           }
           
           if (difficultyElements.length > 0) {
             for (let i = 0; i < difficultyElements.length; i++) {
               const el = difficultyElements[i] as HTMLElement;
-              // Asignar texto según la dificultad seleccionada
-              el.innerText = difficulty;
+              // Asignar texto según el displayDifficulty del nuevo ejercicio, o su dificultad real como fallback
+              let diffText = newExercise.displayDifficulty;
+              if (!diffText) {
+                diffText = newExercise.difficulty === DifficultyLevel.EASY ? "Fácil" :
+                           newExercise.difficulty === DifficultyLevel.MEDIUM ? "Medio" : "Difícil";
+              }
+              el.innerText = diffText;
             }
           }
           
-          console.log("⚡ UI actualizada forzadamente después de establecer ejercicio");
+          console.log("⚡ UI actualizada forzadamente después de establecer ejercicio (setTimeout)");
         } catch (e) {
-          console.error("Error al forzar actualización de UI:", e);
+          console.error("Error al forzar actualización de UI (setTimeout):", e);
         }
       }, 100);
     } else {
