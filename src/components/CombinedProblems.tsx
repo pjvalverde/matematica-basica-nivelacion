@@ -4,6 +4,7 @@ import './FactorizationExercises.css'; // Reutilizamos el mismo CSS
 import { addCoinsToUser, getUserProfile } from '../firebase/userService';
 import { db } from '../firebase/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
+import { generateAIExercises } from '../firebase/apiConfig';
 
 // Tipos de ejercicios
 enum ExerciseType {
@@ -60,6 +61,9 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
   const [error, setError] = useState<string | null>(null);
   // Lista de IDs de ejercicios ya completados por el usuario
   const [completedExercises, setCompletedExercises] = useState<string[]>([]);
+  // Estado para controlar si se están usando ejercicios generados por IA
+  const [useAI, setUseAI] = useState<boolean>(false);
+  const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
 
   // Cargar puntos del usuario y ejercicios completados al iniciar
   useEffect(() => {
@@ -507,6 +511,76 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
     setError(null);
   };
 
+  // Generar ejercicios usando IA
+  const generateAIExercise = async () => {
+    setIsGeneratingAI(true);
+    setError(null);
+    
+    try {
+      // Mapear el tipo de ejercicio a los tipos que acepta la API de DeepSeek
+      let aiTopic: 'factorization' | 'rationalfractions' = 'factorization';
+      let aiType = '';
+      
+      if (exerciseType === ExerciseType.PRODUCTOS_NOTABLES) {
+        aiTopic = 'factorization';
+        aiType = 'productos notables';
+      } else if (exerciseType === ExerciseType.FACTOREO) {
+        aiTopic = 'factorization';
+        aiType = 'factoreo';
+      } else if (exerciseType === ExerciseType.FRACCIONES_ALGEBRAICAS) {
+        aiTopic = 'rationalfractions';
+        aiType = 'fracciones algebraicas';
+      } else {
+        // Si es TODOS, elegir aleatoriamente
+        const randomType = Math.random();
+        if (randomType < 0.33) {
+          aiTopic = 'factorization';
+          aiType = 'productos notables';
+        } else if (randomType < 0.66) {
+          aiTopic = 'factorization';
+          aiType = 'factoreo';
+        } else {
+          aiTopic = 'rationalfractions';
+          aiType = 'fracciones algebraicas';
+        }
+      }
+      
+      // Mapear la dificultad
+      const aiDifficulty = difficulty === DifficultyLevel.MEDIUM ? 'medium' : 'hard';
+      
+      // Llamar a la API para generar ejercicios
+      const aiExercises = await generateAIExercises(aiTopic, aiDifficulty, aiType);
+      
+      if (aiExercises && aiExercises.length > 0) {
+        // Convertir el ejercicio generado por la IA al formato que usa nuestro componente
+        const aiExercise: Exercise = {
+          id: generateId(),
+          type: exerciseType,
+          difficulty: difficulty,
+          problem: aiExercises[0].problem,
+          solution: aiExercises[0].solution,
+          hint: aiExercises[0].hint || "Intenta aplicar las técnicas aprendidas",
+          points: difficulty === DifficultyLevel.MEDIUM ? 2 : 3
+        };
+        
+        // Establecer el ejercicio generado como el actual
+        setCurrentExercise(aiExercise);
+        setUserAnswer('');
+        setShowSolution(false);
+        setIsCorrect(null);
+      } else {
+        throw new Error("No se pudo generar un ejercicio con IA");
+      }
+    } catch (error) {
+      console.error("Error generando ejercicio con IA:", error);
+      setError(`Error al generar ejercicio con IA: ${error instanceof Error ? error.message : 'Error desconocido'}. Intenta con un ejercicio predefinido.`);
+      // Si falla la generación con IA, usar un ejercicio predefinido
+      generateNewExercise();
+    } finally {
+      setIsGeneratingAI(false);
+    }
+  };
+
   // Verificar respuesta
   const checkAnswer = async () => {
     if (!currentExercise) return;
@@ -673,9 +747,18 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
       return (
         <div className="factorization-exercises-empty">
           <p>No hay ejercicios activos. Genera uno nuevo utilizando las opciones anteriores.</p>
-          <button className="generate-button" onClick={generateNewExercise}>
-            Generar ejercicio
-          </button>
+          <div className="buttons-container">
+            <button className="generate-button" onClick={generateNewExercise}>
+              Generar ejercicio predefinido
+            </button>
+            <button 
+              className="generate-ai-button" 
+              onClick={generateAIExercise}
+              disabled={isGeneratingAI}
+            >
+              {isGeneratingAI ? 'Generando con IA...' : 'Generar con IA'}
+            </button>
+          </div>
         </div>
       );
     }
@@ -831,9 +914,23 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
           </select>
         </div>
         
-        <button className="generate-button" onClick={generateNewExercise}>
-          Generar ejercicio
-        </button>
+        <div className="buttons-container">
+          <button 
+            className="generate-button" 
+            onClick={generateNewExercise}
+            disabled={isGeneratingAI}
+          >
+            Generar ejercicio predefinido
+          </button>
+          
+          <button 
+            className="generate-ai-button" 
+            onClick={generateAIExercise}
+            disabled={isGeneratingAI}
+          >
+            {isGeneratingAI ? 'Generando con IA...' : 'Generar con IA'}
+          </button>
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
