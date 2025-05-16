@@ -341,8 +341,8 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
       type: ExerciseType.FRACCIONES_ALGEBRAICAS,
       difficulty: DifficultyLevel.MEDIUM,
       problem: "\\frac{3}{x-2} - \\frac{1}{x+1}",
-      solution: "\\frac{3(x+1)-(x-2)}{(x-2)(x+1)}",
-      hint: "Encuentra el denominador común y resta las fracciones",
+      solution: "\\frac{2x+5}{(x-2)(x+1)}",
+      hint: "Encuentra el denominador común, resta las fracciones y simplifica al máximo",
       points: 2
     },
     {
@@ -378,8 +378,8 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
       type: ExerciseType.FRACCIONES_ALGEBRAICAS,
       difficulty: DifficultyLevel.HARD,
       problem: "\\frac{1}{x-1} + \\frac{1}{x+1} + \\frac{2}{x^2-1}",
-      solution: "\\frac{2x+2}{(x-1)(x+1)}",
-      hint: "Recuerda que x²-1 = (x-1)(x+1) y encuentra el denominador común",
+      solution: "\\frac{2}{x-1}",
+      hint: "Recuerda que x²-1 = (x-1)(x+1) y encuentra el denominador común. Luego simplifica al máximo.",
       points: 3
     },
     {
@@ -566,6 +566,8 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
                  
         // Si aún no es correcto, verificar si es una forma simplificada
         if (!correct) {
+          // IMPORTANTE: Siempre buscamos la máxima simplificación en todos los ejercicios
+          
           // Caso específico para el ejercicio 1/(x-1) + 1/(x+1) + 2/(x^2-1)
           // Cuya solución es (2x+2)/((x-1)(x+1)) o en su forma más simplificada 2/(x-1)
           if (currentExercise.problem === "\\frac{1}{x-1} + \\frac{1}{x+1} + \\frac{2}{x^2-1}") {
@@ -594,6 +596,13 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
             // Caso específico para x^3-8 / x-2 = x^2+2x+4
             if (currentExercise.problem.includes("\\frac{x^3-8}{x-2}") && 
                 normalizedUserAnswer === "x^2+2x+4") {
+              correct = true;
+            }
+            
+            // Caso específico para 3/(x-2) - 1/(x+1)
+            if (currentExercise.problem === "\\frac{3}{x-2} - \\frac{1}{x+1}" && 
+                (normalizedUserAnswer === "(2x+5)/((x-2)(x+1))" || 
+                 normalizedUserAnswer === "\\frac{2x+5}{(x-2)(x+1)}")) {
               correct = true;
             }
           }
@@ -652,8 +661,8 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
         <li>Productos: <code>2x</code> o <code>2*x</code> para 2x</li>
         <li>Paréntesis: Use <code>(</code> y <code>)</code> para agrupar expresiones</li>
         <li>No es necesario escribir el coeficiente 1, por ejemplo: <code>x</code> en lugar de <code>1x</code></li>
-        <li><strong>IMPORTANTE:</strong> Proporciona siempre la respuesta en su forma más simplificada posible</li>
-        <li><strong>NOTA:</strong> Para fracciones algebraicas, se aceptan tanto formas factorizadas como simplificadas. Por ejemplo, para <code>1/(x-1) + 1/(x+1) + 2/(x²-1)</code>, son válidas tanto <code>(2x+2)/((x-1)(x+1))</code> como <code>2/(x-1)</code></li>
+        <li><strong>OBJETIVO PRINCIPAL:</strong> Siempre debes proporcionar la respuesta en su forma MÁS SIMPLIFICADA posible</li>
+        <li><strong>NOTA:</strong> Para fracciones algebraicas, se prefiere la forma más simplificada. Por ejemplo, para <code>1/(x-1) + 1/(x+1) + 2/(x²-1)</code>, la respuesta correcta es <code>2/(x-1)</code></li>
       </ul>
     </div>
   );
