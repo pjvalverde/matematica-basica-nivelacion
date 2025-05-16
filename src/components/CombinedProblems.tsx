@@ -478,6 +478,25 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
       }
     }
     
+    // Para fracciones, verificar si la respuesta es equivalente con o sin paréntesis
+    if (!correct && normalizedSolution.includes('/')) {
+      // Caso especial para fracciones
+      const solutionParts = normalizedSolution.split('/');
+      const userParts = normalizedUserAnswer.split('/');
+      
+      if (solutionParts.length === 2 && userParts.length === 2) {
+        // Limpiar paréntesis externos si existen
+        const cleanNumeratorSolution = solutionParts[0].replace(/^\(|\)$/g, '');
+        const cleanDenominatorSolution = solutionParts[1].replace(/^\(|\)$/g, '');
+        const cleanNumeratorUser = userParts[0].replace(/^\(|\)$/g, '');
+        const cleanDenominatorUser = userParts[1].replace(/^\(|\)$/g, '');
+        
+        // Verificar si los numeradores y denominadores coinciden después de limpiar paréntesis
+        correct = cleanNumeratorSolution === cleanNumeratorUser && 
+                 cleanDenominatorSolution === cleanDenominatorUser;
+      }
+    }
+    
     setIsCorrect(correct);
     
     // Si es correcto y hay un usuario, actualizar puntos
@@ -516,7 +535,8 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
       <h4>Guía para escribir respuestas</h4>
       <ul>
         <li>Exponentes: <code>x^2</code> para x²</li>
-        <li>Fracciones: <code>x^2/(x-1)</code> para x²/(x-1)</li>
+        <li>Fracciones: <code>(x+1)/(x-1)</code> para (x+1)/(x-1)</li>
+        <li><strong>IMPORTANTE:</strong> En fracciones, usa paréntesis para el numerador y denominador cuando contengan sumas o restas</li>
         <li>Raíz cuadrada: <code>\sqrt{'{'}x{'}'}</code> para √x</li>
         <li>Productos: <code>2x</code> o <code>2*x</code> para 2x</li>
         <li>Paréntesis: Use <code>(</code> y <code>)</code> para agrupar expresiones</li>
