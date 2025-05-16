@@ -767,6 +767,31 @@ const AIExerciseGenerator: React.FC<AIExerciseGeneratorProps> = ({ topic, onExer
           
           // Si llegamos aquí, la API respondió antes del timeout
           console.log('✅ API RESPONDIÓ:', apiExercises ? `Con ${apiExercises.length} ejercicios` : 'Sin ejercicios');
+
+          // ---- START DIAGNOSTIC OVERRIDE ----
+          if (difficulty === 'hard' && exerciseType === 'complex_operations') {
+            console.warn("🔥 DIAGNOSTIC OVERRIDE: Forzando getGuaranteedExercise para Operaciones Combinadas Difícil");
+            const guaranteedHardComplex = getGuaranteedExercise(topic, 'hard', 'complex_operations');
+            onExercisesGenerated([{
+              ...guaranteedHardComplex,
+              // Asegurar que las displayProperties coincidan con la selección forzada
+              displayType: "Operaciones complejas con fracciones racionales",
+              displayDifficulty: "Difícil",
+              type: 'complex_operations', // Forzar tipo interno
+              difficulty: 'hard', // Forzar dificultad interna
+              metadata: {
+                forceUI: true,
+                generatedByAI: false, // Marcado como no IA porque lo forzamos localmente
+                difficulty: 'hard',
+                type: 'complex_operations',
+                forcedByDiagnosticOverride: true,
+                timestamp: new Date().getTime()
+              }
+            }]);
+            setIsLoading(false);
+            return; // Salir temprano después de forzar el ejercicio
+          }
+          // ---- END DIAGNOSTIC OVERRIDE ----
           
           if (apiExercises && Array.isArray(apiExercises) && apiExercises.length > 0) {
             // Procesar ejercicios de la API, añadiendo displayType y displayDifficulty

@@ -58,10 +58,12 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
   const [userPoints, setUserPoints] = useState<number>(0);
   const [totalExercises, setTotalExercises] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  // Lista de IDs de ejercicios ya completados por el usuario
+  const [completedExercises, setCompletedExercises] = useState<string[]>([]);
 
-  // Cargar puntos del usuario al iniciar
+  // Cargar puntos del usuario y ejercicios completados al iniciar
   useEffect(() => {
-    const loadUserPoints = async () => {
+    const loadUserData = async () => {
       if (user?.uid) {
         try {
           // Intentar obtener perfil de usuario
@@ -73,8 +75,15 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
             setUserPoints(userData.totalCoins || 0);
             setTotalExercises(userData.exercisesCompleted || 0);
           }
+
+          // Cargar los IDs de ejercicios completados desde localStorage
+          const completedExercisesKey = `completed_exercises_${user.uid}`;
+          const savedCompletedExercises = localStorage.getItem(completedExercisesKey);
+          if (savedCompletedExercises) {
+            setCompletedExercises(JSON.parse(savedCompletedExercises));
+          }
         } catch (error) {
-          console.error("Error loading user points:", error);
+          console.error("Error loading user data:", error);
           // En caso de error, almacenamos localmente
           const localPoints = localStorage.getItem(`coins_${user.uid}`);
           if (localPoints) {
@@ -84,7 +93,7 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
       }
     };
     
-    loadUserPoints();
+    loadUserData();
   }, [user]);
 
   // Ejercicios de productos notables
@@ -402,6 +411,44 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
     }
   ];
 
+  // Función para generar variaciones de ejercicios
+  const generateVariation = (exercise: Exercise): Exercise => {
+    // Crear una copia del ejercicio
+    const newExercise = { ...exercise, id: generateId() };
+    
+    // Dependiendo del tipo de ejercicio, modificar ligeramente los valores
+    if (exercise.type === ExerciseType.PRODUCTOS_NOTABLES) {
+      // Modificar coeficientes ligeramente para productos notables
+      if (exercise.problem.includes('(x')) {
+        // Reemplazar x con (x+1) o (x-1) para crear una variación
+        const variation = Math.random() > 0.5 ? 1 : -1;
+        newExercise.problem = exercise.problem.replace(/\(x/g, `(x${variation > 0 ? '+' : ''}${variation}`);
+        
+        // Ajustar la solución (esto es simplificado, en un caso real necesitarías recalcular la solución)
+        // Para una implementación completa, necesitarías usar una biblioteca de álgebra simbólica
+        newExercise.solution = "Solución recalculada"; // Placeholder
+      }
+    } else if (exercise.type === ExerciseType.FACTOREO) {
+      // Para factorización, podemos cambiar los coeficientes
+      if (exercise.problem.includes('x^2')) {
+        const coefficient = Math.floor(Math.random() * 3) + 2; // 2, 3, o 4
+        newExercise.problem = exercise.problem.replace(/(\d+)x\^2/, `${coefficient}x^2`);
+        // Ajustar solución (placeholder)
+        newExercise.solution = "Solución recalculada";
+      }
+    } else if (exercise.type === ExerciseType.FRACCIONES_ALGEBRAICAS) {
+      // Para fracciones, podemos cambiar los términos constantes
+      if (exercise.problem.includes('+')) {
+        const variation = Math.floor(Math.random() * 3) + 1; // 1, 2, o 3
+        newExercise.problem = exercise.problem.replace(/\+\s*(\d+)/g, `+${variation}`);
+        // Ajustar solución (placeholder)
+        newExercise.solution = "Solución recalculada";
+      }
+    }
+    
+    return newExercise;
+  };
+
   // Generar un nuevo ejercicio
   const generateNewExercise = () => {
     let allExercises: Exercise[] = [];
@@ -423,19 +470,41 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
     }
     
     // Filtrar por dificultad
-    const filteredExercises = allExercises.filter(ex => ex.difficulty === difficulty);
+    let filteredExercises = allExercises.filter(ex => ex.difficulty === difficulty);
     
-    // Seleccionar un ejercicio aleatorio
-    if (filteredExercises.length > 0) {
-      const randomIndex = Math.floor(Math.random() * filteredExercises.length);
-      setCurrentExercise(filteredExercises[randomIndex]);
-      setUserAnswer('');
-      setShowSolution(false);
-      setIsCorrect(null);
-    } else {
-      setError("No hay ejercicios disponibles con los criterios seleccionados");
+    // Filtrar ejercicios ya completados
+    const availableExercises = filteredExercises.filter(ex => !completedExercises.includes(ex.id));
+    
+    // Si no hay ejercicios disponibles (todos han sido completados), generar variaciones
+    if (availableExercises.length === 0) {
+      console.log("Todos los ejercicios han sido completados, generando variaciones...");
+      
+      // Tomar ejercicios originales y generar variaciones
+      const variations = filteredExercises.map(ex => generateVariation(ex));
+      
+      // Seleccionar un ejercicio aleatorio de las variaciones
+      if (variations.length > 0) {
+        const randomIndex = Math.floor(Math.random() * variations.length);
+        setCurrentExercise(variations[randomIndex]);
+        setUserAnswer('');
+        setShowSolution(false);
+        setIsCorrect(null);
+        setError(null);
+        return;
+      }
+      
+      setError("No hay más ejercicios disponibles para esta categoría y dificultad.");
       setCurrentExercise(null);
+      return;
     }
+    
+    // Seleccionar un ejercicio aleatorio de los disponibles
+    const randomIndex = Math.floor(Math.random() * availableExercises.length);
+    setCurrentExercise(availableExercises[randomIndex]);
+    setUserAnswer('');
+    setShowSolution(false);
+    setIsCorrect(null);
+    setError(null);
   };
 
   // Verificar respuesta
@@ -500,7 +569,7 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
     setIsCorrect(correct);
     
     // Si es correcto y hay un usuario, actualizar puntos
-    if (correct && user?.uid) {
+    if (correct && user?.uid && currentExercise) {
       try {
         // Actualizar monedas en Firebase
         const result = await addCoinsToUser(user.uid, currentExercise.points);
@@ -508,6 +577,13 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
           setUserPoints(result.totalCoins);
           setTotalExercises(result.exercisesCompleted);
         }
+        
+        // Guardar el ID del ejercicio completado en localStorage
+        const updatedCompletedExercises = [...completedExercises, currentExercise.id];
+        setCompletedExercises(updatedCompletedExercises);
+        
+        const completedExercisesKey = `completed_exercises_${user.uid}`;
+        localStorage.setItem(completedExercisesKey, JSON.stringify(updatedCompletedExercises));
       } catch (error) {
         console.error("Error updating coins:", error);
         // En caso de error, almacenar localmente
