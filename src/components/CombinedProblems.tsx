@@ -548,7 +548,7 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
     }
     
     // Para fracciones, verificar si la respuesta es equivalente con o sin paréntesis
-    if (!correct && normalizedSolution.includes('/')) {
+    if (!correct && (normalizedSolution.includes('/') || normalizedUserAnswer.includes('/'))) {
       // Caso especial para fracciones
       const solutionParts = normalizedSolution.split('/');
       const userParts = normalizedUserAnswer.split('/');
@@ -563,6 +563,41 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
         // Verificar si los numeradores y denominadores coinciden después de limpiar paréntesis
         correct = cleanNumeratorSolution === cleanNumeratorUser && 
                  cleanDenominatorSolution === cleanDenominatorUser;
+                 
+        // Si aún no es correcto, verificar si es una forma simplificada
+        // Por ejemplo, (2x+2)/((x-1)(x+1)) simplificada a 2/(x-1)
+        if (!correct) {
+          // Caso especial para la fracción del ejemplo: 1/(x-1) + 1/(x+1) + 2/(x^2-1)
+          // Cuya solución es (2x+2)/((x-1)(x+1))
+          if (
+            (normalizedSolution === "(2x+2)/((x-1)(x+1))" || normalizedSolution === "(2x+2)/(x^2-1)") && 
+            (normalizedUserAnswer === "2/(x-1)" || normalizedUserAnswer === "2/x-1")
+          ) {
+            correct = false; // Esta simplificación no es correcta
+          }
+          
+          // Verificar otras simplificaciones comunes
+          // Por ejemplo, si la respuesta esperada es (x^2-4)/(x+2) = (x-2)(x+2)/(x+2) = x-2
+          if (currentExercise.type === ExerciseType.FRACCIONES_ALGEBRAICAS) {
+            // Caso específico para x^2-1 / x-1 = x+1
+            if (currentExercise.problem.includes("\\frac{x^2-1}{x-1}") && 
+                normalizedUserAnswer === "x+1") {
+              correct = true;
+            }
+            
+            // Caso específico para x^2-4 / x+2 = x-2
+            if (currentExercise.problem.includes("\\frac{x^2-4}{x+2}") && 
+                normalizedUserAnswer === "x-2") {
+              correct = true;
+            }
+            
+            // Caso específico para x^3-8 / x-2 = x^2+2x+4
+            if (currentExercise.problem.includes("\\frac{x^3-8}{x-2}") && 
+                normalizedUserAnswer === "x^2+2x+4") {
+              correct = true;
+            }
+          }
+        }
       }
     }
     
@@ -617,6 +652,7 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
         <li>Productos: <code>2x</code> o <code>2*x</code> para 2x</li>
         <li>Paréntesis: Use <code>(</code> y <code>)</code> para agrupar expresiones</li>
         <li>No es necesario escribir el coeficiente 1, por ejemplo: <code>x</code> en lugar de <code>1x</code></li>
+        <li><strong>IMPORTANTE:</strong> Proporciona siempre la respuesta en su forma más simplificada posible</li>
       </ul>
     </div>
   );
