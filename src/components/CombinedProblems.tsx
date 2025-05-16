@@ -64,6 +64,7 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
   // Estado para controlar si se están usando ejercicios generados por IA
   const [useAI, setUseAI] = useState<boolean>(false);
   const [isGeneratingAI, setIsGeneratingAI] = useState<boolean>(false);
+  const [apiStatus, setApiStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable'>('idle');
 
   // Cargar puntos del usuario y ejercicios completados al iniciar
   useEffect(() => {
@@ -99,6 +100,14 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
     
     loadUserData();
   }, [user]);
+
+  // Verificar el estado de la API al cargar el componente
+  useEffect(() => {
+    // Verificar el estado de la API solo si no se ha verificado antes
+    if (apiStatus === 'idle') {
+      checkApiStatus();
+    }
+  }, []);
 
   // Ejercicios de productos notables
   const productosNotablesEjercicios: Exercise[] = [
@@ -511,47 +520,130 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
     setError(null);
   };
 
+  // Verificar el estado de la API
+  const checkApiStatus = async () => {
+    setApiStatus('checking');
+    try {
+      console.log("🔍 Verificando estado de la API...");
+      
+      // Intentar hacer una llamada simple a la API para verificar su disponibilidad
+      const testTopic = 'factorization';
+      const testDifficulty = 'easy';
+      const testType = 'test';
+      
+      // Usamos la función de Firebase para evitar problemas de CORS
+      const functionUrl = window.location.hostname === 'localhost' 
+        ? 'http://localhost:5001/math-basis/us-central1/deepseekProxy' 
+        : 'https://us-central1-math-basis.cloudfunctions.net/deepseekProxy';
+      
+      // Crear un AbortController para cancelar la solicitud después de 5 segundos
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      try {
+        const response = await fetch(functionUrl, {
+          method: 'OPTIONS',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok || response.status === 204) {
+          console.log("✅ API disponible");
+          setApiStatus('available');
+          return true;
+        } else {
+          console.error("❌ API no disponible:", response.status);
+          setApiStatus('unavailable');
+          return false;
+        }
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error("❌ Error al verificar API:", error);
+        setApiStatus('unavailable');
+        return false;
+      }
+    } catch (error) {
+      console.error("❌ Error general al verificar API:", error);
+      setApiStatus('unavailable');
+      return false;
+    }
+  };
+
   // Generar ejercicios usando IA
   const generateAIExercise = async () => {
     setIsGeneratingAI(true);
     setError(null);
     
+    // Verificar primero el estado de la API si no se ha verificado
+    if (apiStatus === 'idle') {
+      const isApiAvailable = await checkApiStatus();
+      if (!isApiAvailable) {
+        setError("La API de DeepSeek no está disponible en este momento. Usando ejercicios predefinidos.");
+        generateNewExercise();
+        setIsGeneratingAI(false);
+        return;
+      }
+    } else if (apiStatus === 'unavailable') {
+      setError("La API de DeepSeek no está disponible. Usando ejercicios predefinidos.");
+      generateNewExercise();
+      setIsGeneratingAI(false);
+      return;
+    }
+    
     try {
+      console.log("🚀 Iniciando generación de ejercicio con IA");
+      
       // Mapear el tipo de ejercicio a los tipos que acepta la API de DeepSeek
-      let aiTopic: 'factorization' | 'rationalfractions' = 'factorization';
-      let aiType = '';
+      let aiTopic: 'factorization' | 'rationalfractions';
+      let aiType: string;
       
       if (exerciseType === ExerciseType.PRODUCTOS_NOTABLES) {
         aiTopic = 'factorization';
-        aiType = 'productos notables';
+        aiType = 'productos_notables';
       } else if (exerciseType === ExerciseType.FACTOREO) {
         aiTopic = 'factorization';
         aiType = 'factoreo';
       } else if (exerciseType === ExerciseType.FRACCIONES_ALGEBRAICAS) {
         aiTopic = 'rationalfractions';
-        aiType = 'fracciones algebraicas';
+        aiType = 'fracciones_algebraicas';
       } else {
         // Si es TODOS, elegir aleatoriamente
         const randomType = Math.random();
         if (randomType < 0.33) {
           aiTopic = 'factorization';
-          aiType = 'productos notables';
+          aiType = 'productos_notables';
         } else if (randomType < 0.66) {
           aiTopic = 'factorization';
           aiType = 'factoreo';
         } else {
           aiTopic = 'rationalfractions';
-          aiType = 'fracciones algebraicas';
+          aiType = 'fracciones_algebraicas';
         }
       }
       
       // Mapear la dificultad
       const aiDifficulty = difficulty === DifficultyLevel.MEDIUM ? 'medium' : 'hard';
       
-      // Llamar a la API para generar ejercicios
-      const aiExercises = await generateAIExercises(aiTopic, aiDifficulty, aiType);
+      console.log(`📌 Llamando a API con: Tema=${aiTopic}, Dificultad=${aiDifficulty}, Tipo=${aiType}`);
+      
+      // Llamar a la API para generar ejercicios con un timeout de 30 segundos
+      const apiPromise = generateAIExercises(aiTopic, aiDifficulty, aiType);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout al llamar a la API después de 30 segundos')), 30000)
+      );
+      
+      // Race entre la API y el timeout
+      const aiExercises = await Promise.race([apiPromise, timeoutPromise]) as any[];
+      
+      console.log("📥 Respuesta recibida de la API:", aiExercises);
       
       if (aiExercises && aiExercises.length > 0) {
+        console.log("✅ Ejercicios generados correctamente:", aiExercises[0]);
+        
         // Convertir el ejercicio generado por la IA al formato que usa nuestro componente
         const aiExercise: Exercise = {
           id: generateId(),
@@ -569,10 +661,10 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
         setShowSolution(false);
         setIsCorrect(null);
       } else {
-        throw new Error("No se pudo generar un ejercicio con IA");
+        throw new Error("La API no devolvió ejercicios válidos");
       }
     } catch (error) {
-      console.error("Error generando ejercicio con IA:", error);
+      console.error("❌ Error generando ejercicio con IA:", error);
       setError(`Error al generar ejercicio con IA: ${error instanceof Error ? error.message : 'Error desconocido'}. Intenta con un ejercicio predefinido.`);
       // Si falla la generación con IA, usar un ejercicio predefinido
       generateNewExercise();
@@ -754,9 +846,11 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
             <button 
               className="generate-ai-button" 
               onClick={generateAIExercise}
-              disabled={isGeneratingAI}
+              disabled={isGeneratingAI || apiStatus === 'checking'}
             >
-              {isGeneratingAI ? 'Generando con IA...' : 'Generar con IA'}
+              {isGeneratingAI ? 'Generando con IA...' : 
+               apiStatus === 'checking' ? 'Verificando API...' :
+               apiStatus === 'unavailable' ? 'IA no disponible' : 'Generar con IA'}
             </button>
           </div>
         </div>
@@ -926,9 +1020,11 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
           <button 
             className="generate-ai-button" 
             onClick={generateAIExercise}
-            disabled={isGeneratingAI}
+            disabled={isGeneratingAI || apiStatus === 'checking'}
           >
-            {isGeneratingAI ? 'Generando con IA...' : 'Generar con IA'}
+            {isGeneratingAI ? 'Generando con IA...' : 
+             apiStatus === 'checking' ? 'Verificando API...' :
+             apiStatus === 'unavailable' ? 'IA no disponible' : 'Generar con IA'}
           </button>
         </div>
       </div>
