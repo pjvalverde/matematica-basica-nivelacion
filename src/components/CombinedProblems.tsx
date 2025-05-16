@@ -517,7 +517,7 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
       <ul>
         <li>Exponentes: <code>x^2</code> para x²</li>
         <li>Fracciones: <code>x^2/(x-1)</code> para x²/(x-1)</li>
-        <li>Raíz cuadrada: <code>\sqrt{x}</code> para √x</li>
+        <li>Raíz cuadrada: <code>\sqrt{'{'}x{'}'}</code> para √x</li>
         <li>Productos: <code>2x</code> o <code>2*x</code> para 2x</li>
         <li>Paréntesis: Use <code>(</code> y <code>)</code> para agrupar expresiones</li>
         <li>No es necesario escribir el coeficiente 1, por ejemplo: <code>x</code> en lugar de <code>1x</code></li>
