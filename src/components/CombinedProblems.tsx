@@ -565,15 +565,15 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
                  cleanDenominatorSolution === cleanDenominatorUser;
                  
         // Si aún no es correcto, verificar si es una forma simplificada
-        // Por ejemplo, (2x+2)/((x-1)(x+1)) simplificada a 2/(x-1)
         if (!correct) {
-          // Caso especial para la fracción del ejemplo: 1/(x-1) + 1/(x+1) + 2/(x^2-1)
-          // Cuya solución es (2x+2)/((x-1)(x+1))
-          if (
-            (normalizedSolution === "(2x+2)/((x-1)(x+1))" || normalizedSolution === "(2x+2)/(x^2-1)") && 
-            (normalizedUserAnswer === "2/(x-1)" || normalizedUserAnswer === "2/x-1")
-          ) {
-            correct = false; // Esta simplificación no es correcta
+          // Caso específico para el ejercicio 1/(x-1) + 1/(x+1) + 2/(x^2-1)
+          // Cuya solución es (2x+2)/((x-1)(x+1)) o en su forma más simplificada 2/(x-1)
+          if (currentExercise.problem === "\\frac{1}{x-1} + \\frac{1}{x+1} + \\frac{2}{x^2-1}") {
+            // Aceptar la respuesta simplificada 2/(x-1)
+            if (normalizedUserAnswer === "2/(x-1)" || normalizedUserAnswer === "2/x-1" || 
+                normalizedUserAnswer === "2/(x-1)" || normalizedUserAnswer === "2/x-1") {
+              correct = true; // Esta simplificación es correcta
+            }
           }
           
           // Verificar otras simplificaciones comunes
@@ -653,6 +653,7 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
         <li>Paréntesis: Use <code>(</code> y <code>)</code> para agrupar expresiones</li>
         <li>No es necesario escribir el coeficiente 1, por ejemplo: <code>x</code> en lugar de <code>1x</code></li>
         <li><strong>IMPORTANTE:</strong> Proporciona siempre la respuesta en su forma más simplificada posible</li>
+        <li><strong>NOTA:</strong> Para fracciones algebraicas, se aceptan tanto formas factorizadas como simplificadas. Por ejemplo, para <code>1/(x-1) + 1/(x+1) + 2/(x²-1)</code>, son válidas tanto <code>(2x+2)/((x-1)(x+1))</code> como <code>2/(x-1)</code></li>
       </ul>
     </div>
   );
