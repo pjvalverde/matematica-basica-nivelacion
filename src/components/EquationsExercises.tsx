@@ -279,6 +279,15 @@ const EquationsExercises: React.FC<EquationsExercisesProps> = ({ user }) => {
       .trim();
   };
 
+  // Función para extraer solo los números de una respuesta
+  const extractNumbers = (answer: string): number[] => {
+    // Extraer todos los números (incluyendo negativos) de la respuesta
+    const numbers = answer.match(/-?\d+\.?\d*/g);
+    if (!numbers) return [];
+    
+    return numbers.map(num => parseFloat(num)).sort((a, b) => a - b);
+  };
+
   // Función para verificar si dos respuestas de ecuaciones son equivalentes
   const areEquationAnswersEquivalent = (userAnswer: string, solution: string): boolean => {
     const normalizedUser = normalizeAnswer(userAnswer);
@@ -287,6 +296,23 @@ const EquationsExercises: React.FC<EquationsExercisesProps> = ({ user }) => {
     // Verificación exacta
     if (normalizedUser === normalizedSolution) {
       return true;
+    }
+    
+    // NUEVA LÓGICA: Comparar solo los números extraídos
+    // Esto permite que "3,5" sea equivalente a "x=3,x=5" o "x=3 o x=5"
+    const userNumbers = extractNumbers(userAnswer);
+    const solutionNumbers = extractNumbers(solution);
+    
+    if (userNumbers.length === solutionNumbers.length && userNumbers.length > 0) {
+      // Verificar si todos los números coinciden (ya están ordenados)
+      const numbersMatch = userNumbers.every((num, index) => 
+        Math.abs(num - solutionNumbers[index]) < 0.01
+      );
+      
+      if (numbersMatch) {
+        console.log(`✅ Respuesta aceptada por números: Usuario=[${userNumbers.join(',')}] vs Solución=[${solutionNumbers.join(',')}]`);
+        return true;
+      }
     }
     
     // Para sistemas de ecuaciones, verificar si las variables están en orden diferente
@@ -457,12 +483,40 @@ const EquationsExercises: React.FC<EquationsExercisesProps> = ({ user }) => {
           
           <div className="answer-section">
             <label htmlFor="user-answer">Tu respuesta:</label>
+            
+            {/* Guía específica para ecuaciones */}
+            <div className="equations-guide">
+              <h5>📝 ¿Cómo escribir tu respuesta?</h5>
+              <div className="guide-examples">
+                <div className="guide-example">
+                  <strong>Ecuación lineal:</strong> <code>5</code> (solo el número)
+                </div>
+                <div className="guide-example">
+                  <strong>Ecuación cuadrática:</strong> <code>3,5</code> (números separados por coma)
+                </div>
+                <div className="guide-example">
+                  <strong>Sistema 2x2:</strong> <code>3,2</code> (primer número = x, segundo = y)
+                </div>
+                <div className="guide-example">
+                  <strong>Sistema 3x3:</strong> <code>2,1,3</code> (x, y, z respectivamente)
+                </div>
+              </div>
+              <p className="guide-note">
+                <strong>💡 Tip:</strong> Solo escribe los números de la solución separados por comas, sin espacios ni variables.
+              </p>
+            </div>
+            
             <input
               id="user-answer"
               type="text"
               value={userAnswer}
               onChange={(e) => setUserAnswer(e.target.value)}
-              placeholder="Ejemplo: x = 3, y = 2"
+              placeholder={
+                selectedType === ExerciseType.LINEAR ? "Ejemplo: 5" :
+                selectedType === ExerciseType.QUADRATIC ? "Ejemplo: 3,5" :
+                selectedType === ExerciseType.SYSTEM_2X2 ? "Ejemplo: 3,2" :
+                "Ejemplo: 2,1,3"
+              }
               className="answer-input"
             />
             <div className="button-group">
