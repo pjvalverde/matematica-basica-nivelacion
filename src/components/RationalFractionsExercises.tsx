@@ -546,45 +546,113 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
     setIsCorrect(null);
   };
 
+  // Función mejorada para normalizar respuestas según especificaciones
+  const normalizeAnswer = (answer: string): string => {
+    return answer
+      .replace(/\s+/g, '') // Eliminar todos los espacios
+      .toLowerCase()
+      .replace(/\\\\/g, '\\') // Normalizar barras invertidas dobles
+      // Convertir \frac{a}{b} a (a)/(b)
+      .replace(/\\frac\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}\{([^{}]*(?:\{[^{}]*\}[^{}]*)*)\}/g, '($1)/($2)')
+      // Normalizar fracciones que ya están en formato (a)/(b)
+      .replace(/\(([^)]+)\)\/\(([^)]+)\)/g, '($1)/($2)')
+      // Para fracciones simples sin paréntesis, agregar paréntesis si contienen operaciones
+      .replace(/([a-z0-9\+\-\*]+)\/([a-z0-9\+\-\*]+)/g, (match, num, den) => {
+        // Si el numerador o denominador contiene operaciones, agregar paréntesis
+        if (num.includes('+') || num.includes('-') || den.includes('+') || den.includes('-')) {
+          return `(${num})/(${den})`;
+        }
+        return match;
+      })
+      // Mantener exponentes en formato x^2
+      .replace(/\^\{(\d+)\}/g, '^$1')
+      .replace(/\^(\d+)/g, '^$1')
+      // Mantener raíces en formato \sqrt{x}
+      .replace(/\\sqrt\{([^}]+)\}/g, '\\sqrt{$1}')
+      .replace(/sqrt\{([^}]+)\}/g, '\\sqrt{$1}')
+      .replace(/sqrt\(([^)]+)\)/g, '\\sqrt{$1}')
+      // Remover asteriscos de multiplicación innecesarios
+      .replace(/\*/g, '')
+      // Normalizar signos
+      .replace(/\+\-/g, '-')
+      .replace(/\-\+/g, '-')
+      // Limpiar caracteres especiales innecesarios
+      .replace(/[\{\}]/g, '') // Remover llaves sueltas que no sean de funciones LaTeX
+      .trim();
+  };
+
+  // Función para verificar si dos expresiones son equivalentes
+  const areExpressionsEquivalent = (userAnswer: string, solution: string): boolean => {
+    const normalizedUser = normalizeAnswer(userAnswer);
+    const normalizedSolution = normalizeAnswer(solution);
+    
+    // Verificación exacta
+    if (normalizedUser === normalizedSolution) {
+      return true;
+    }
+    
+    // Para fracciones, verificar diferentes representaciones equivalentes
+    if (normalizedUser.includes('/') && normalizedSolution.includes('/')) {
+      // Extraer numerador y denominador
+      const userMatch = normalizedUser.match(/\(([^)]+)\)\/\(([^)]+)\)/);
+      const solutionMatch = normalizedSolution.match(/\(([^)]+)\)\/\(([^)]+)\)/);
+      
+      if (userMatch && solutionMatch) {
+        const [, userNum, userDen] = userMatch;
+        const [, solNum, solDen] = solutionMatch;
+        
+        // Verificar si son la misma fracción
+        if (userNum === solNum && userDen === solDen) {
+          return true;
+        }
+        
+        // Verificar formas simplificadas comunes
+        // Por ejemplo: (x^2-1)/(x-1) = x+1
+        if (solNum.includes(userDen) && !normalizedSolution.includes('/')) {
+          // Caso especial: fracción que se simplifica a un polinomio
+          return normalizedUser.replace(/\([^)]+\)\/\([^)]+\)/, normalizedSolution) === normalizedSolution;
+        }
+      }
+    }
+    
+    // Verificar formas con paréntesis diferentes
+    const userWithoutParens = normalizedUser.replace(/[\(\)]/g, '');
+    const solutionWithoutParens = normalizedSolution.replace(/[\(\)]/g, '');
+    if (userWithoutParens === solutionWithoutParens) {
+      return true;
+    }
+    
+    // Verificar orden de términos en sumas/restas
+    if ((normalizedUser.includes('+') || normalizedUser.includes('-')) && 
+        (normalizedSolution.includes('+') || normalizedSolution.includes('-'))) {
+      
+      // Separar términos y compararlos sin orden
+      const userTerms = normalizedUser.split(/[\+\-]/).filter(term => term.length > 0);
+      const solutionTerms = normalizedSolution.split(/[\+\-]/).filter(term => term.length > 0);
+      
+      if (userTerms.length === solutionTerms.length) {
+        const userSorted = userTerms.sort();
+        const solutionSorted = solutionTerms.sort();
+        if (userSorted.every((term, index) => term === solutionSorted[index])) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  };
+
   // Verificar respuesta con mejor manejo
   const checkAnswer = async () => {
     if (!currentExercise) return;
 
-    // Normalizar respuestas removiendo espacios y convirtiendo a minúsculas
-    let normalizedUserAnswer = userAnswer.replace(/\s+/g, '').toLowerCase();
-    let normalizedSolution = currentExercise.solution.replace(/\s+/g, '').toLowerCase();
+    // Usar la nueva función de normalización
+    const isCorrect = areExpressionsEquivalent(userAnswer, currentExercise.solution);
     
-    // Reemplazar caracteres especiales por equivalentes
-    normalizedUserAnswer = normalizedUserAnswer
-      .replace(/\^(\d+)/g, '^$1') // Mantener exponentes
-      .replace(/\*/g, '') // Remover asteriscos de multiplicación
-      .replace(/sqrt/g, '√') // Reemplazar sqrt por √
-      .replace(/\\frac{([^{}]+)}{([^{}]+)}/g, '$1/$2'); // Convertir \frac{a}{b} a a/b
-      
-    normalizedSolution = normalizedSolution
-      .replace(/\^(\d+)/g, '^$1')
-      .replace(/\*/g, '')
-      .replace(/sqrt/g, '√')
-      .replace(/\\frac{([^{}]+)}{([^{}]+)}/g, '$1/$2');
-    
-    // Verificar múltiples formas válidas de la solución cuando aplique
-    let correct = normalizedUserAnswer === normalizedSolution;
-    
-    // Si no coincide exactamente, verificar si son equivalentes algebraicamente
-    // (Esta es una simplificación, en un caso real se necesitaría un evaluador de expresiones algebraicas)
-    if (!correct) {
-      // Si la solución tiene forma de fracción a/b, también aceptamos formas como a/b = c
-      const userParts = normalizedUserAnswer.split('=');
-      if (userParts.length > 1) {
-        // Si el usuario incluye un paso de simplificación, verificamos la parte izquierda
-        correct = userParts[0].trim() === normalizedSolution;
-      }
-    }
-    
-    setIsCorrect(correct);
+    setIsCorrect(isCorrect);
     
     // Si es correcto y hay un usuario, actualizar puntos
-    if (correct && user?.uid) {
+    if (isCorrect && user?.uid) {
       try {
         // Actualizar monedas en Firebase
         const result = await addCoinsToUser(user.uid, currentExercise.points);
@@ -616,21 +684,46 @@ const RationalFractionsExercises: React.FC<RationalFractionsExercisesProps> = ({
   // Componente para la guía de LaTeX
   const LatexGuide = () => (
     <div className="latex-guide">
-      <h4>Guía para escribir fórmulas matemáticas</h4>
-      <ul>
-        <li>Exponentes: <code>x^2</code> para x²</li>
-        <li>Fracciones: <code>\\frac&#123;numerador&#125;&#123;denominador&#125;</code> o <code>(numerador)/(denominador)</code></li>
-        <li>Raíz cuadrada: <code>\\sqrt&#123;x&#125;</code> para √x</li>
-        <li>Productos: <code>2x</code> o <code>2*x</code> para 2x</li>
-        <li>Exponentes negativos: <code>x^(-1)</code> para x⁻¹</li>
-        <li>Paréntesis: Use <code>(</code> y <code>)</code> para agrupar expresiones</li>
-      </ul>
-      <p>Ejemplos:</p>
-      <ul>
-        <li><code>\\frac&#123;x+1&#125;&#123;x-2&#125;</code> - Fracción con x+1 en el numerador y x-2 en el denominador</li>
-        <li><code>x^2 + 2x + 1</code> - Polinomio cuadrático</li>
-        <li><code>\\frac&#123;3x&#125;&#123;4&#125; + \\frac&#123;x&#125;&#123;2&#125;</code> - Suma de fracciones</li>
-      </ul>
+      <h4>Guía para escribir respuestas matemáticas</h4>
+      <div className="guide-section">
+        <h5>⭐ Formato preferido (recomendado):</h5>
+        <ul>
+          <li><strong>Exponentes:</strong> <code>x^2</code> para x²</li>
+          <li><strong>Fracciones:</strong> <code>(x-3)/(x+9)</code> para fracciones</li>
+          <li><strong>Raíces:</strong> <code>\sqrt{'{x}'}</code> para √x</li>
+          <li><strong>Sin espacios:</strong> Escribe todo junto, ejemplo: <code>(x^2-1)/(x-1)</code></li>
+        </ul>
+      </div>
+      
+      <div className="guide-section">
+        <h5>✅ Ejemplos correctos:</h5>
+        <ul>
+          <li><code>(x+1)/(x-2)</code> - Fracción simple</li>
+          <li><code>(x^2-4)/(x+2)</code> - Fracción con exponente</li>
+          <li><code>x+1</code> - Expresión simplificada</li>
+          <li><code>(2x+3)/(x^2+1)</code> - Fracción compleja</li>
+          <li><code>\sqrt{'{x+1}'}</code> - Raíz cuadrada</li>
+        </ul>
+      </div>
+      
+      <div className="guide-section">
+        <h5>⚠️ Reglas importantes:</h5>
+        <ul>
+          <li><strong>NO uses espacios</strong> en tu respuesta</li>
+          <li><strong>NO uses \frac{}{}</strong> para fracciones (aunque se muestra así en el problema)</li>
+          <li><strong>Usa paréntesis</strong> cuando el numerador o denominador tengan operaciones</li>
+          <li><strong>Simplifica al máximo</strong> tu respuesta final</li>
+        </ul>
+      </div>
+      
+      <div className="guide-section">
+        <h5>❌ Evita estos formatos:</h5>
+        <ul>
+          <li><code>x ^ 2</code> (con espacios)</li>
+          <li><code>\frac{'{x+1}'}{'{x-2}'}</code> (usando \frac)</li>
+          <li><code>x+1 / x-2</code> (sin paréntesis en operaciones)</li>
+        </ul>
+      </div>
     </div>
   );
 

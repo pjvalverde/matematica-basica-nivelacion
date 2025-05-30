@@ -253,60 +253,84 @@ const EquationsExercises: React.FC<EquationsExercisesProps> = ({ user }) => {
     setFeedback('');
   };
 
+  // Función mejorada para normalizar respuestas según especificaciones
+  const normalizeAnswer = (answer: string): string => {
+    return answer
+      .replace(/\s+/g, '') // Eliminar todos los espacios
+      .toLowerCase()
+      // Mantener exponentes en formato x^2
+      .replace(/\^\{(\d+)\}/g, '^$1')
+      .replace(/\^(\d+)/g, '^$1')
+      // Mantener raíces en formato \sqrt{x}
+      .replace(/\\sqrt\{([^}]+)\}/g, '\\sqrt{$1}')
+      .replace(/sqrt\{([^}]+)\}/g, '\\sqrt{$1}')
+      .replace(/sqrt\(([^)]+)\)/g, '\\sqrt{$1}')
+      // Normalizar signos de ecuaciones
+      .replace(/x=/g, '') // Eliminar "x=" al principio para comparación
+      .replace(/y=/g, '') // Eliminar "y=" al principio para comparación
+      .replace(/z=/g, '') // Eliminar "z=" al principio para comparación
+      .replace(/=/g, '') // Eliminar signos de igual para comparación
+      .replace(/±/g, '+-') // Convertir ± a +-
+      .replace(/\+\-/g, '+-') // Normalizar +- 
+      .replace(/\s*o\s*/g, ',') // Convertir "o" a ","
+      .replace(/\s*y\s*/g, ',') // Convertir "y" a "," en contexto de variables
+      .replace(/,+/g, ',') // Eliminar comas múltiples
+      .replace(/^,|,$/g, '') // Eliminar comas al inicio/final
+      .trim();
+  };
+
+  // Función para verificar si dos respuestas de ecuaciones son equivalentes
+  const areEquationAnswersEquivalent = (userAnswer: string, solution: string): boolean => {
+    const normalizedUser = normalizeAnswer(userAnswer);
+    const normalizedSolution = normalizeAnswer(solution);
+    
+    // Verificación exacta
+    if (normalizedUser === normalizedSolution) {
+      return true;
+    }
+    
+    // Para sistemas de ecuaciones, verificar si las variables están en orden diferente
+    if (normalizedUser.includes(',') && normalizedSolution.includes(',')) {
+      const userParts = normalizedUser.split(',').map(part => part.trim()).sort();
+      const solutionParts = normalizedSolution.split(',').map(part => part.trim()).sort();
+      if (userParts.length === solutionParts.length) {
+        return userParts.every((part, index) => part === solutionParts[index]);
+      }
+    }
+    
+    // Para ecuaciones cuadráticas, verificar orden de soluciones
+    if ((normalizedUser.includes('+-') || normalizedUser.includes(',')) && 
+        (normalizedSolution.includes('+-') || normalizedSolution.includes(','))) {
+      const userNums = normalizedUser.replace(/[xyz=]/g, '').split(/[,+-]/).filter(n => n.length > 0).sort();
+      const solNums = normalizedSolution.replace(/[xyz=]/g, '').split(/[,+-]/).filter(n => n.length > 0).sort();
+      if (userNums.length === solNums.length) {
+        return userNums.every((num, index) => {
+          const userVal = parseFloat(num);
+          const solVal = parseFloat(solNums[index]);
+          return !isNaN(userVal) && !isNaN(solVal) && Math.abs(userVal - solVal) < 0.01;
+        });
+      }
+    }
+    
+    // Verificar variaciones comunes de escritura
+    // Por ejemplo: "x=3,y=2" vs "3,2" vs "x=3y=2"
+    const userClean = normalizedUser.replace(/[xyz=]/g, '');
+    const solutionClean = normalizedSolution.replace(/[xyz=]/g, '');
+    if (userClean === solutionClean) {
+      return true;
+    }
+    
+    return false;
+  };
+
   const checkAnswer = async () => {
     if (!currentExercise || !userAnswer.trim()) {
       setFeedback('Por favor, ingresa una respuesta.');
       return;
     }
 
-    // Normalizar respuesta del usuario y solución esperada
-    const normalizeAnswer = (answer: string): string => {
-      return answer
-        .toLowerCase()
-        .replace(/\s+/g, '') // Eliminar espacios
-        .replace(/x=/g, '') // Eliminar "x=" al principio
-        .replace(/=/g, '') // Eliminar signos de igual
-        .replace(/±/g, '+-') // Convertir ± a +-
-        .replace(/\+\-/g, '+-') // Normalizar +- 
-        .replace(/o/g, ',') // Convertir "o" a ","
-        .replace(/y=/g, ',y=') // Separar variables con comas
-        .replace(/z=/g, ',z=') // Separar variables con comas
-        .replace(/,+/g, ',') // Eliminar comas múltiples
-        .replace(/^,|,$/g, '') // Eliminar comas al inicio/final
-        .trim();
-    };
-
-    const normalizedUserAnswer = normalizeAnswer(userAnswer);
-    const normalizedSolution = normalizeAnswer(currentExercise.solution);
-
-    // Verificar si las respuestas coinciden exactamente o con variaciones comunes
-    const checkVariations = (user: string, solution: string): boolean => {
-      // Verificación exacta
-      if (user === solution) return true;
-      
-      // Para sistemas de ecuaciones, verificar si las variables están en orden diferente
-      if (user.includes(',') && solution.includes(',')) {
-        const userParts = user.split(',').sort();
-        const solutionParts = solution.split(',').sort();
-        if (userParts.length === solutionParts.length) {
-          return userParts.every((part, index) => part === solutionParts[index]);
-        }
-      }
-      
-      // Para ecuaciones cuadráticas, verificar orden de soluciones
-      if ((user.includes('+-') || user.includes(',')) && 
-          (solution.includes('+-') || solution.includes(','))) {
-        const userNums = user.replace(/[xy=]/g, '').split(/[,+-]/).filter(n => n).sort();
-        const solNums = solution.replace(/[xy=]/g, '').split(/[,+-]/).filter(n => n).sort();
-        if (userNums.length === solNums.length) {
-          return userNums.every((num, index) => Math.abs(parseFloat(num) - parseFloat(solNums[index])) < 0.01);
-        }
-      }
-      
-      return false;
-    };
-
-    const isCorrect = checkVariations(normalizedUserAnswer, normalizedSolution);
+    // Usar la nueva función de normalización
+    const isCorrect = areEquationAnswersEquivalent(userAnswer, currentExercise.solution);
     
     if (isCorrect) {
       setFeedback('¡Correcto! 🎉');
