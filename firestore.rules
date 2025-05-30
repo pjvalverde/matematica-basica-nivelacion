@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para la colección de usuarios
+    match /users/{userId} {
+      // Los usuarios pueden leer su propio perfil
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Los usuarios pueden crear su propio perfil
+      allow create: if request.auth != null && request.auth.uid == userId;
+      
+      // Los usuarios pueden actualizar su propio perfil
+      allow update: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Regla especial para el leaderboard: permitir lectura de todos los perfiles de usuario
+    // para mostrar el ranking público
+    match /users/{userId} {
+      allow read: if request.auth != null;
+    }
+    
+    // Permitir a todos los usuarios autenticados leer la colección de usuarios
+    // para el leaderboard
+    match /users/{document=**} {
+      allow read: if request.auth != null;
+    }
+  }
+} 
