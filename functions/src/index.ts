@@ -33,9 +33,11 @@ const getApiKey = () => {
 // Función proxy para llamar a la API de DeepSeek
 export const deepseekProxy = functions.https.onRequest((request, response) => {
   console.log('Recibida solicitud a deepseekProxy:', request.method, request.url);
+  console.log('Headers:', JSON.stringify(request.headers));
   
   // Manejar solicitudes OPTIONS para CORS preflight
   if (request.method === 'OPTIONS') {
+    console.log('Procesando solicitud OPTIONS para CORS preflight');
     response.set('Access-Control-Allow-Origin', '*');
     response.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
     response.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
@@ -47,6 +49,7 @@ export const deepseekProxy = functions.https.onRequest((request, response) => {
   corsHandler(request, response, async () => {
     // Solo permitir solicitudes POST
     if (request.method !== 'POST') {
+      console.error('Método no permitido:', request.method);
       response.status(405).send('Método no permitido');
       return;
     }
@@ -54,6 +57,16 @@ export const deepseekProxy = functions.https.onRequest((request, response) => {
     try {
       const { topic, difficulty, type } = request.body;
       console.log('Parámetros recibidos:', { topic, difficulty, type });
+      
+      if (!topic || !difficulty) {
+        console.error('Parámetros incompletos:', { topic, difficulty });
+        response.status(400).json({ 
+          success: false, 
+          error: 'Parámetros incompletos',
+          message: 'Se requieren los parámetros "topic" y "difficulty"'
+        });
+        return;
+      }
       
       let prompt = "";
       
@@ -83,33 +96,45 @@ export const deepseekProxy = functions.https.onRequest((request, response) => {
         const apiKey = getApiKey();
         console.log('Enviando solicitud a DeepSeek con prompt:', prompt);
         
+        // Crear el objeto de solicitud para DeepSeek
+        const deepseekRequestData = {
+          model: "deepseek-chat",
+          messages: [
+            { role: "system", content: "Eres un asistente especializado en generar ejercicios de matemáticas. Formatea las expresiones matemáticas usando la sintaxis de LaTeX." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000,
+          response_format: { type: "json_object" }
+        };
+        
+        console.log('Payload completo para DeepSeek:', JSON.stringify(deepseekRequestData));
+        
         const deepseekResponse = await axios.post(
           apiUrl,
-          {
-            model: "deepseek-chat",
-            messages: [
-              { role: "system", content: "Eres un asistente especializado en generar ejercicios de matemáticas. Formatea las expresiones matemáticas usando la sintaxis de LaTeX." },
-              { role: "user", content: prompt }
-            ],
-            temperature: 0.7,
-            max_tokens: 1000,
-            response_format: { type: "json_object" }
-          },
+          deepseekRequestData,
           {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${apiKey}`
             },
-            timeout: 15000 // Tiempo de espera de 15 segundos
+            timeout: 30000 // Aumentado a 30 segundos
           }
         );
         
         console.log('Respuesta recibida de DeepSeek, status:', deepseekResponse.status);
+        console.log('Headers de respuesta:', JSON.stringify(deepseekResponse.headers));
+        
+        // Verificar si la respuesta tiene datos
+        if (!deepseekResponse.data) {
+          console.error('Respuesta vacía de DeepSeek');
+          throw new Error('Respuesta vacía de DeepSeek');
+        }
         
         // Procesar la respuesta de DeepSeek
         if (deepseekResponse.data && deepseekResponse.data.choices && deepseekResponse.data.choices[0].message.content) {
           const content = deepseekResponse.data.choices[0].message.content;
-          console.log("Contenido de la respuesta de DeepSeek:", content.substring(0, 200) + '...');
+          console.log("Contenido de la respuesta de DeepSeek:", content);
           
           try {
             // Intentamos extraer el array JSON de la respuesta
@@ -132,7 +157,7 @@ export const deepseekProxy = functions.https.onRequest((request, response) => {
             
             if (exercises && exercises.length > 0) {
               // Añadir información sobre el tipo y dificultad a cada ejercicio
-              const enhancedExercises = exercises.map(exercise => ({
+              const enhancedExercises = exercises.map((exercise: any) => ({
                 ...exercise,
                 metadata: {
                   generatedByAI: true,
@@ -158,6 +183,7 @@ export const deepseekProxy = functions.https.onRequest((request, response) => {
             }
           } catch (parseError) {
             console.error("Error al parsear la respuesta:", parseError);
+            console.error("Contenido que causó el error:", content);
             throw parseError;
           }
         } else {
@@ -166,6 +192,19 @@ export const deepseekProxy = functions.https.onRequest((request, response) => {
         }
       } catch (apiError) {
         console.error('Error al llamar a la API de DeepSeek:', apiError);
+        
+        // Información detallada del error de Axios
+        if (axios.isAxiosError(apiError)) {
+          console.error('Detalles del error de Axios:', {
+            message: apiError.message,
+            code: apiError.code,
+            status: apiError.response?.status,
+            statusText: apiError.response?.statusText,
+            data: apiError.response?.data,
+            headers: apiError.response?.headers
+          });
+        }
+        
         throw new Error('Error al comunicarse con la API de DeepSeek: ' + 
           (apiError instanceof Error ? apiError.message : 'Error desconocido'));
       }

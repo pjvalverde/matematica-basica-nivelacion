@@ -20,7 +20,7 @@ interface HeaderProps {
   user: User | null;
   handleLogout: () => void;
   currentSection: string;
-  onNavigate: (section: 'login' | 'register' | 'exercises' | 'rationalfractions' | 'combinedproblems' | 'leaderboard') => void;
+  onNavigate: (section: 'login' | 'register' | 'exercises' | 'rationalfractions' | 'equations' | 'combinedproblems' | 'leaderboard') => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ user, handleLogout, currentSection, onNavigate }) => {
@@ -71,6 +71,16 @@ const Header: React.FC<HeaderProps> = ({ user, handleLogout, currentSection, onN
                   }}
                 >
                   Fracciones Algebraicas
+                </a>
+                <a 
+                  href="#" 
+                  className={`nav-link ${currentSection === 'equations' ? 'active' : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onNavigate('equations');
+                  }}
+                >
+                  Ecuaciones
                 </a>
                 <a 
                   href="#" 

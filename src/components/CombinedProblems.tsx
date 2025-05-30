@@ -5,6 +5,7 @@ import { addCoinsToUser, getUserProfile } from '../firebase/userService';
 import { db } from '../firebase/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import { generateAIExercises } from '../firebase/apiConfig';
+import axios from 'axios';
 
 // Tipos de ejercicios
 enum ExerciseType {
@@ -521,53 +522,75 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
   };
 
   // Verificar el estado de la API
-  const checkApiStatus = async () => {
+  const checkApiStatus = async (): Promise<boolean> => {
     setApiStatus('checking');
     try {
-      console.log("🔍 Verificando estado de la API...");
+      // Intentar hacer una solicitud simple a la API para verificar si está disponible
+      const isLocalhost = window.location.hostname === 'localhost' || 
+                          window.location.hostname === '127.0.0.1';
       
-      // Intentar hacer una llamada simple a la API para verificar su disponibilidad
-      const testTopic = 'factorization';
-      const testDifficulty = 'easy';
-      const testType = 'test';
-      
-      // Usamos la función de Firebase para evitar problemas de CORS
-      const functionUrl = window.location.hostname === 'localhost' 
+      const functionUrl = isLocalhost 
         ? 'http://localhost:5001/math-basis/us-central1/deepseekProxy' 
         : 'https://us-central1-math-basis.cloudfunctions.net/deepseekProxy';
       
-      // Crear un AbortController para cancelar la solicitud después de 5 segundos
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      console.log('Verificando disponibilidad de API en:', functionUrl);
       
+      // Primera verificación: Intento directo con axios
       try {
-        const response = await fetch(functionUrl, {
-          method: 'OPTIONS',
-          headers: {
-            'Content-Type': 'application/json',
+        const response = await axios.post(
+          functionUrl,
+          { 
+            action: 'ping', 
+            timestamp: Date.now() 
           },
-          signal: controller.signal
-        });
+          { 
+            headers: { 
+              'Content-Type': 'application/json',
+              'X-Check-Type': 'availability-check'
+            },
+            timeout: 10000 // 10 segundos máximo para la verificación
+          }
+        );
         
-        clearTimeout(timeoutId);
+        console.log('Respuesta de verificación recibida:', response.status);
         
-        if (response.ok || response.status === 204) {
-          console.log("✅ API disponible");
+        if (response.status === 200) {
+          console.log('API disponible (método directo)');
           setApiStatus('available');
           return true;
-        } else {
-          console.error("❌ API no disponible:", response.status);
-          setApiStatus('unavailable');
-          return false;
         }
-      } catch (error) {
-        clearTimeout(timeoutId);
-        console.error("❌ Error al verificar API:", error);
-        setApiStatus('unavailable');
-        return false;
+      } catch (httpError) {
+        console.log('Error en verificación directa:', httpError);
+        // Si falla el método directo, intentamos con el SDK de Firebase
       }
+      
+      // Segunda verificación: Usar el SDK de Firebase Functions
+      try {
+        const { getFunctions, httpsCallable } = await import('firebase/functions');
+        const { functions } = await import('../firebase/firebaseConfig');
+        
+        const pingFunction = httpsCallable(functions, 'deepseekProxy');
+        const result = await pingFunction({ action: 'ping', timestamp: Date.now() });
+        
+        console.log('Respuesta de verificación SDK recibida:', result);
+        
+        if (result.data) {
+          console.log('API disponible (método SDK)');
+          setApiStatus('available');
+          return true;
+        }
+      } catch (sdkError) {
+        console.log('Error en verificación SDK:', sdkError);
+        // Si ambos métodos fallan, marcamos como no disponible
+      }
+      
+      // Si llegamos aquí, la API no está disponible
+      console.log('API no disponible después de verificación');
+      setApiStatus('unavailable');
+      return false;
+      
     } catch (error) {
-      console.error("❌ Error general al verificar API:", error);
+      console.error('Error al verificar el estado de la API:', error);
       setApiStatus('unavailable');
       return false;
     }
@@ -715,64 +738,87 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
     
     // Para fracciones, verificar si la respuesta es equivalente con o sin paréntesis
     if (!correct && (normalizedSolution.includes('/') || normalizedUserAnswer.includes('/'))) {
-      // Caso especial para fracciones
-      const solutionParts = normalizedSolution.split('/');
-      const userParts = normalizedUserAnswer.split('/');
-      
-      if (solutionParts.length === 2 && userParts.length === 2) {
-        // Limpiar paréntesis externos si existen
-        const cleanNumeratorSolution = solutionParts[0].replace(/^\(|\)$/g, '');
-        const cleanDenominatorSolution = solutionParts[1].replace(/^\(|\)$/g, '');
-        const cleanNumeratorUser = userParts[0].replace(/^\(|\)$/g, '');
-        const cleanDenominatorUser = userParts[1].replace(/^\(|\)$/g, '');
+      try {
+        // Caso especial para fracciones
+        const solutionParts = normalizedSolution.split('/');
+        const userParts = normalizedUserAnswer.split('/');
         
-        // Verificar si los numeradores y denominadores coinciden después de limpiar paréntesis
-        correct = cleanNumeratorSolution === cleanNumeratorUser && 
-                 cleanDenominatorSolution === cleanDenominatorUser;
-                 
-        // Si aún no es correcto, verificar si es una forma simplificada
-        if (!correct) {
-          // IMPORTANTE: Siempre buscamos la máxima simplificación en todos los ejercicios
+        if (solutionParts.length === 2 && userParts.length === 2) {
+          // Limpiar paréntesis externos si existen
+          const cleanNumeratorSolution = solutionParts[0].replace(/^\(|\)$/g, '');
+          const cleanDenominatorSolution = solutionParts[1].replace(/^\(|\)$/g, '');
+          const cleanNumeratorUser = userParts[0].replace(/^\(|\)$/g, '');
+          const cleanDenominatorUser = userParts[1].replace(/^\(|\)$/g, '');
           
-          // Caso específico para el ejercicio 1/(x-1) + 1/(x+1) + 2/(x^2-1)
-          // Cuya solución es (2x+2)/((x-1)(x+1)) o en su forma más simplificada 2/(x-1)
-          if (currentExercise.problem === "\\frac{1}{x-1} + \\frac{1}{x+1} + \\frac{2}{x^2-1}") {
-            // Aceptar la respuesta simplificada 2/(x-1)
-            if (normalizedUserAnswer === "2/(x-1)" || normalizedUserAnswer === "2/x-1" || 
-                normalizedUserAnswer === "2/(x-1)" || normalizedUserAnswer === "2/x-1") {
-              correct = true; // Esta simplificación es correcta
-            }
-          }
-          
-          // Verificar otras simplificaciones comunes
-          // Por ejemplo, si la respuesta esperada es (x^2-4)/(x+2) = (x-2)(x+2)/(x+2) = x-2
-          if (currentExercise.type === ExerciseType.FRACCIONES_ALGEBRAICAS) {
-            // Caso específico para x^2-1 / x-1 = x+1
-            if (currentExercise.problem.includes("\\frac{x^2-1}{x-1}") && 
-                normalizedUserAnswer === "x+1") {
+          // Verificar si los numeradores y denominadores coinciden después de limpiar paréntesis
+          correct = cleanNumeratorSolution === cleanNumeratorUser && 
+                  cleanDenominatorSolution === cleanDenominatorUser;
+                  
+          // Si aún no es correcto, verificar si es una forma simplificada
+          if (!correct) {
+            // Verificar fracciones algebraicas simplificadas
+            // 1. Verificar si la respuesta del usuario es una forma simplificada válida
+            
+            // Caso específico: x^2-1 / x-1 = x+1
+            if (normalizedSolution.includes('(x-1)(x+1)') && 
+                normalizedSolution.includes('/') && 
+                normalizedSolution.includes('x-1') &&
+                normalizedUserAnswer === 'x+1') {
               correct = true;
             }
             
-            // Caso específico para x^2-4 / x+2 = x-2
-            if (currentExercise.problem.includes("\\frac{x^2-4}{x+2}") && 
-                normalizedUserAnswer === "x-2") {
+            // Caso específico: x^2-4 / x+2 = x-2
+            else if (normalizedSolution.includes('(x-2)(x+2)') && 
+                    normalizedSolution.includes('/') && 
+                    normalizedSolution.includes('x+2') &&
+                    normalizedUserAnswer === 'x-2') {
               correct = true;
             }
             
-            // Caso específico para x^3-8 / x-2 = x^2+2x+4
-            if (currentExercise.problem.includes("\\frac{x^3-8}{x-2}") && 
-                normalizedUserAnswer === "x^2+2x+4") {
+            // Caso específico: x^3-8 / x-2 = x^2+2x+4
+            else if (normalizedSolution.includes('(x-2)(x^2+2x+4)') && 
+                    normalizedSolution.includes('/') && 
+                    normalizedSolution.includes('x-2') &&
+                    normalizedUserAnswer === 'x^2+2x+4') {
               correct = true;
             }
             
-            // Caso específico para 3/(x-2) - 1/(x+1)
-            if (currentExercise.problem === "\\frac{3}{x-2} - \\frac{1}{x+1}" && 
-                (normalizedUserAnswer === "(2x+5)/((x-2)(x+1))" || 
-                 normalizedUserAnswer === "\\frac{2x+5}{(x-2)(x+1)}")) {
+            // Caso específico para el ejercicio 1/(x-1) + 1/(x+1) + 2/(x^2-1)
+            // Cuya solución es (2x+2)/((x-1)(x+1)) o en su forma más simplificada 2/(x-1)
+            else if (currentExercise.problem === "\\frac{1}{x-1} + \\frac{1}{x+1} + \\frac{2}{x^2-1}" && 
+                    (normalizedUserAnswer === "2/(x-1)" || 
+                     normalizedUserAnswer === "2/x-1" || 
+                     normalizedUserAnswer === "2/(x-1)")) {
               correct = true;
+            }
+            
+            // Caso general para fracciones algebraicas
+            // Si la respuesta esperada tiene forma (numerador)/(denominador) pero el usuario
+            // dio una forma simplificada, intentamos validarla
+            else if (currentExercise.type === ExerciseType.FRACCIONES_ALGEBRAICAS) {
+              // Verificar si la respuesta del usuario podría ser una simplificación válida
+              // Esto requeriría un análisis más complejo de expresiones algebraicas
+              
+              // Caso específico para 3/(x-2) - 1/(x+1)
+              if (currentExercise.problem === "\\frac{3}{x-2} - \\frac{1}{x+1}" && 
+                  (normalizedUserAnswer === "(2x+5)/((x-2)(x+1))" || 
+                   normalizedUserAnswer === "\\frac{2x+5}{(x-2)(x+1)}" ||
+                   normalizedUserAnswer === "(2x+5)/((x-2)(x+1))" ||
+                   normalizedUserAnswer === "(2x+5)/(x-2)(x+1)")) {
+                correct = true;
+              }
+              
+              // Verificar otras simplificaciones comunes
+              // Por ejemplo, si la respuesta esperada es (x^2-4)/(x+2) = (x-2)(x+2)/(x+2) = x-2
+              else if (cleanNumeratorSolution.includes(cleanDenominatorSolution) && 
+                      normalizedUserAnswer === cleanNumeratorSolution.replace(cleanDenominatorSolution, '').replace(/^\*|\*$/g, '')) {
+                correct = true;
+              }
             }
           }
         }
+      } catch (error) {
+        console.error("Error al verificar fracciones:", error);
       }
     }
     
@@ -828,8 +874,17 @@ const CombinedProblems: React.FC<CombinedProblemsProps> = ({ user }) => {
         <li>Paréntesis: Use <code>(</code> y <code>)</code> para agrupar expresiones</li>
         <li>No es necesario escribir el coeficiente 1, por ejemplo: <code>x</code> en lugar de <code>1x</code></li>
         <li><strong>OBJETIVO PRINCIPAL:</strong> Siempre debes proporcionar la respuesta en su forma MÁS SIMPLIFICADA posible</li>
-        <li><strong>NOTA:</strong> Para fracciones algebraicas, se prefiere la forma más simplificada. Por ejemplo, para <code>1/(x-1) + 1/(x+1) + 2/(x²-1)</code>, la respuesta correcta es <code>2/(x-1)</code></li>
+        <li><strong>NOTA:</strong> Para fracciones algebraicas, se prefiere la forma más simplificada. Por ejemplo:
+          <ul>
+            <li><code>x^2-1</code> dividido por <code>x-1</code> debe simplificarse a <code>x+1</code></li>
+            <li><code>x^2-4</code> dividido por <code>x+2</code> debe simplificarse a <code>x-2</code></li>
+            <li>Si puedes cancelar factores comunes en el numerador y denominador, debes hacerlo</li>
+          </ul>
+        </li>
       </ul>
+      <div className="important-note">
+        <p><strong>IMPORTANTE:</strong> El sistema evaluará como correcta la respuesta más simplificada posible. Si tu respuesta es matemáticamente correcta pero no está en su forma más simple, podría ser marcada como incorrecta.</p>
+      </div>
     </div>
   );
 

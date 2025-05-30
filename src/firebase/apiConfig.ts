@@ -1,6 +1,8 @@
 // Configuración para la API de DeepSeek usando Firebase Cloud Functions
 
 import axios from 'axios';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { functions } from './firebaseConfig';
 
 // Logs de debugging mejorados
 const logDebug = (message: string, data?: any) => {
@@ -42,108 +44,130 @@ export const generateAIExercises = async (
     
     logDebug(`🔐 API REQUEST - SELECCIONES DEL USUARIO: Dificultad=${difficulty}, Tipo=${type}`);
     
-    // Usamos la función de Firebase para evitar problemas de CORS
-    const functionUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5001/math-basis/us-central1/deepseekProxy' 
-      : 'https://us-central1-math-basis.cloudfunctions.net/deepseekProxy';
+    // Determinar el entorno y construir la URL adecuada
+    const isLocalhost = window.location.hostname === 'localhost' || 
+                        window.location.hostname === '127.0.0.1';
     
-    logDebug(`Llamando a la función de Firebase: ${functionUrl}`);
+    // Usamos dos métodos para llamar a la función: directo por HTTP y a través de Firebase SDK
+    // para aumentar la probabilidad de éxito
+    let exercises;
+    let errorFromHttp = null;
     
-    // Agregamos un timestamp para evitar cachés
-    const requestData = {
-      topic,
-      difficulty,
-      type,
-      timestamp: new Date().getTime(),
-      forceSelections: true, // NUEVO: Indicar que debe forzar estas selecciones
-      requestId: Math.random().toString(36).substring(2, 15) // ID único para esta solicitud
-    };
-    
-    logDebug("📤 Enviando solicitud con datos:", requestData);
-    
-    const response = await axios.post(
-      functionUrl,
-      requestData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Force-Difficulty': difficulty, // NUEVO: Indicador explícito en headers
-          'X-Force-Type': type || '', // NUEVO: Indicador explícito en headers
-          'X-Request-ID': requestData.requestId // NUEVO: ID de seguimiento
-        },
-        timeout: 30000 // 30 segundos máximo
-      }
-    );
-    
-    logDebug(`📥 Respuesta recibida con status: ${response.status}`);
-    
-    if (response.data && response.data.success && response.data.exercises) {
-      logDebug(`✅ Ejercicios recibidos: ${response.data.exercises.length}`);
+    // Método 1: Llamada directa HTTP a la función
+    try {
+      const functionUrl = isLocalhost 
+        ? 'http://localhost:5001/math-basis/us-central1/deepseekProxy' 
+        : 'https://us-central1-math-basis.cloudfunctions.net/deepseekProxy';
       
-      // SOLUCIÓN EXTREMA: Ignorar completamente los metadatos del API
-      // y sobreescribirlos con lo que el usuario seleccionó
-      const forcedExercises = response.data.exercises.map((exercise: any, index: number) => {
-        logDebug(`Procesando ejercicio #${index+1}`);
-        
-        // Comprobar si los contenidos son válidos
-        if (!exercise.problem || !exercise.solution) {
-          logError(`Ejercicio #${index+1} inválido recibido del API:`, exercise);
-          // Crear un ejercicio de respaldo
-          return {
-            problem: "x^2 + 5x + 6",
-            solution: "(x + 2)(x + 3)",
-            hint: "Busca dos números que multiplicados den 6 y sumados den 5",
-            metadata: {
-              generatedByAI: true,
-              difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
-              type: type || "",       // FORZAR el tipo que seleccionó el usuario
-              forcedByApi: true,       // Añadir indicador para debugging
-              isRepaired: true
-            },
-            // NUEVO: Datos adicionales para garantizar recuperación
-            originalUserSelections: {
-              difficulty,
-              type: type || '',
-              timestamp: Date.now()
-            }
-          };
-        }
-        
-        return {
-          ...exercise,
-          // IGNORAR COMPLETAMENTE cualquier metadato que venga de la API
-          metadata: {
-            generatedByAI: true,
-            difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
-            type: type || "",       // FORZAR el tipo que seleccionó el usuario
-            forcedByApi: true,      // Añadir indicador para debugging
-            timestamp: Date.now()   // Timestamp para debugging
+      logDebug(`Método 1: Llamando directamente a la función de Firebase: ${functionUrl}`);
+      
+      // Agregamos un timestamp para evitar cachés
+      const requestData = {
+        topic,
+        difficulty,
+        type,
+        timestamp: Date.now(),
+        forceSelections: true,
+        requestId: Math.random().toString(36).substring(2, 15)
+      };
+      
+      logDebug("📤 Método 1: Enviando solicitud HTTP con datos:", requestData);
+      
+      const response = await axios.post(
+        functionUrl,
+        requestData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Force-Difficulty': difficulty,
+            'X-Force-Type': type || '',
+            'X-Request-ID': requestData.requestId,
+            'X-Client-Source': 'web-app-direct'
           },
-          // NUEVO: Datos adicionales para garantizar recuperación
-          originalUserSelections: {
-            difficulty,
-            type: type || '',
-            timestamp: Date.now()
-          }
-        };
+          timeout: 30000 // 30 segundos máximo
+        }
+      );
+      
+      logDebug(`📥 Método 1: Respuesta HTTP recibida con status: ${response.status}`);
+      
+      if (response.data && response.data.success && response.data.exercises) {
+        logDebug(`✅ Método 1: Ejercicios recibidos: ${response.data.exercises.length}`);
+        exercises = processExercises(response.data.exercises, difficulty, type);
+        
+        // Guardar respuesta para debugging/recuperación
+        localStorage.setItem('last_api_response_method1', JSON.stringify({
+          timestamp: new Date().toString(),
+          requestDifficulty: difficulty,
+          requestType: type,
+          exercises: exercises
+        }));
+        
+        return exercises;
+      }
+    } catch (httpError) {
+      errorFromHttp = httpError;
+      logError("❌ Método 1: Error en llamada HTTP directa:", httpError);
+      
+      if (axios.isAxiosError(httpError)) {
+        logError('Detalles del error de Axios:', {
+          message: httpError.message,
+          status: httpError.response?.status,
+          data: httpError.response?.data,
+          headers: httpError.response?.headers
+        });
+      }
+      
+      // Continuamos con el método 2
+      logDebug("⚠️ Intentando con el método 2 (Firebase SDK)...");
+    }
+    
+    // Método 2: Usar Firebase SDK
+    try {
+      logDebug("Método 2: Llamando a la función usando Firebase SDK");
+      
+      // Obtener referencia a la función
+      const deepseekProxyFn = httpsCallable(functions, 'deepseekProxy');
+      
+      // Llamar a la función
+      const result = await deepseekProxyFn({
+        topic,
+        difficulty,
+        type,
+        timestamp: Date.now(),
+        requestId: Math.random().toString(36).substring(2, 15),
+        method: "sdk_call"
       });
       
-      logDebug("🔐 Ejercicios con dificultad y tipo FORZADOS:", forcedExercises.length);
+      logDebug("📥 Método 2: Respuesta SDK recibida:", result);
       
-      // NUEVO: Guardar respuesta para debugging/recuperación
-      localStorage.setItem('last_api_response', JSON.stringify({
-        timestamp: new Date().toString(),
-        requestDifficulty: difficulty,
-        requestType: type,
-        exercises: forcedExercises
-      }));
+      if (result.data) {
+        const data = result.data as any;
+        if (data.success && data.exercises) {
+          logDebug(`✅ Método 2: Ejercicios recibidos: ${data.exercises.length}`);
+          exercises = processExercises(data.exercises, difficulty, type);
+          
+          // Guardar respuesta para debugging/recuperación
+          localStorage.setItem('last_api_response_method2', JSON.stringify({
+            timestamp: new Date().toString(),
+            requestDifficulty: difficulty,
+            requestType: type,
+            exercises: exercises
+          }));
+          
+          return exercises;
+        }
+      }
       
-      logDebug("✅✅✅ API EJECUTADA CON ÉXITO - RETORNANDO EJERCICIOS ✅✅✅");
-      return forcedExercises;
-    } else {
-      logError("Respuesta inválida de la función:", response.data);
-      throw new Error('No se recibieron ejercicios válidos');
+      // Si llegamos aquí, ninguno de los métodos funcionó
+      throw new Error("Ambos métodos de llamada a la API fallaron");
+      
+    } catch (sdkError) {
+      logError("❌ Método 2: Error en llamada SDK:", sdkError);
+      
+      // Ambos métodos fallaron, lanzamos el error original
+      throw errorFromHttp || sdkError;
     }
+    
   } catch (error) {
     logError("Error al llamar a la función de Firebase:", error);
     
@@ -169,25 +193,29 @@ export const generateAIExercises = async (
     const backupExercises = generateBackupExercises(topic, difficulty, type);
     
     // Añadir metadatos a los ejercicios de respaldo
-    return backupExercises.map(exercise => ({
-      ...exercise,
-      metadata: {
-        generatedByAI: false,
-        difficulty: difficulty, // FORZAR la dificultad que seleccionó el usuario
-        type: type || "",       // FORZAR el tipo que seleccionó el usuario
-        forcedByApi: true,      // Añadir indicador para debugging
-        isBackup: true,
-        timestamp: Date.now()   // Timestamp para debugging
-      },
-      // NUEVO: Datos adicionales para garantizar recuperación
-      originalUserSelections: {
-        difficulty,
-        type: type || '',
-        timestamp: Date.now()
-      }
-    }));
+    return processExercises(backupExercises, difficulty, type, true);
   }
 };
+
+// Procesar ejercicios con metadatos consistentes
+function processExercises(exercises: any[], difficulty: string, type?: string, isBackup = false) {
+  return exercises.map(exercise => ({
+    ...exercise,
+    metadata: {
+      generatedByAI: !isBackup,
+      difficulty: difficulty,
+      type: type || "",
+      forcedByApi: true,
+      isBackup: isBackup,
+      timestamp: Date.now()
+    },
+    originalUserSelections: {
+      difficulty,
+      type: type || '',
+      timestamp: Date.now()
+    }
+  }));
+}
 
 // Genera ejercicios predefinidos en caso de que falle la API
 function generateBackupExercises(
@@ -248,29 +276,29 @@ function generateBackupExercises(
           hint: "Factoriza el numerador como (x+1)(x+2)"
         },
         {
-          problem: "\\frac{x^3-8}{x-2}",
-          solution: "x^2+2x+4",
-          hint: "Factoriza el numerador como (x-2)(x^2+2x+4)"
+          problem: "\\frac{x^2-4}{x^2-4x+4}",
+          solution: "\\frac{(x+2)(x-2)}{(x-2)^2} = \\frac{x+2}{x-2}",
+          hint: "Factoriza numerador y denominador"
         }
       ];
     } else {
       return [
         {
-          problem: "\\frac{x}{x+1} \\cdot \\frac{x+1}{x-1}",
-          solution: "\\frac{x}{x-1}",
-          hint: "Cancela los factores comunes (x+1)"
+          problem: "\\frac{x^2-1}{x-1}",
+          solution: "x+1",
+          hint: "Factoriza el numerador como (x-1)(x+1)"
         },
         {
-          problem: "\\frac{x^2-4}{x+2} \\div \\frac{x-2}{x+1}",
-          solution: "\\frac{(x-2)(x+1)}{(x+2)(x+1)} = \\frac{x-2}{x+2}",
-          hint: "Para dividir fracciones, multiplica por el recíproco de la segunda"
+          problem: "\\frac{1}{x-1} - \\frac{1}{x+1}",
+          solution: "\\frac{(x+1) - (x-1)}{(x-1)(x+1)} = \\frac{2}{(x-1)(x+1)}",
+          hint: "Encuentra el denominador común y resta"
         },
         {
-          problem: "\\frac{2x}{x^2-1}",
-          solution: "\\frac{2x}{(x-1)(x+1)}",
-          hint: "Factoriza el denominador como (x-1)(x+1)"
+          problem: "\\frac{x}{x^2-1}",
+          solution: "\\frac{x}{(x-1)(x+1)}",
+          hint: "Factoriza el denominador"
         }
       ];
     }
   }
-}; 
+} 
